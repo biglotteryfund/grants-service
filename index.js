@@ -37,6 +37,28 @@ function fetchGrants(collection, queryParams) {
     .toArray();
 }
 
+// Better to do this at data model / mongo end? Trade-offs of importing raw data.
+function cleanResults(data) {
+  return {
+    amountAwarded: data["Amount Awarded"],
+    awardDate: data["Award Date"],
+    description: data["Description"],
+    grantProgrammeCode: data["Grant Programme:Code"],
+    grantProgrammeTitle: data["Grant Programme:Title"],
+    identifier: data["Identifier"],
+    organisationType: data["BIGField_Organisation_Type"],
+    recipientCharityNumber: data["Recipient Org:Charity Number"],
+    recipientCompanyNumber: data["Recipient Org:Company Number"],
+    recipientIdentifier: data["Recipient Org:Identifier"],
+    recipientLocation0GeoCode: data["Recipient Org:Location:0:Geographic Code"],
+    recipientLocation0Name: data["Recipient Org:Location:0:Name"],
+    recipientLocation1GeoCode: data["Recipient Org:Location:1:Geographic Code"],
+    recipientLocation1Name: data["Recipient Org:Location:1:Name"],
+    recipientName: data["Recipient Org:Name"],
+    title: data["Title"]
+  };
+}
+
 module.exports = async (req, res) => {
   try {
     const collection = await connectToMongo();
@@ -47,7 +69,7 @@ module.exports = async (req, res) => {
 
     const results = await fetchGrants(collection, queryParams);
 
-    send(res, 200, results);
+    send(res, 200, results.map(cleanResults));
   } catch (error) {
     send(res, 500, "Failed to connect to data store");
   }
