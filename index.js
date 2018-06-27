@@ -13,32 +13,8 @@ async function connectToMongo() {
     .collection(process.env.MONGO_COLLECTION);
 }
 
-function getPaginationParams(queryParams) {
-  const perPageCount = (queryParams.limit && parseInt(queryParams.limit)) || 10;
-  const pageParam = queryParams.page && parseInt(queryParams.page);
-  const currentPage = pageParam > 1 ? pageParam : 1;
-  const skipCount = perPageCount * (currentPage - 1);
-  return { currentPage, perPageCount, skipCount };
-}
-
-function fetchGrants(collection, queryParams) {
-  const match = {};
-  if (queryParams.q) {
-    match.$text = { $search: queryParams.q };
-    // addFields.score = { $meta: 'textScore' };
-  }
-
-  const pagination = getPaginationParams(queryParams);
-
-  return collection
-    .aggregate([{ $match: match }])
-    .skip(pagination.skipCount)
-    .limit(pagination.perPageCount)
-    .toArray();
-}
-
 // Better to do this at data model / mongo end? Trade-offs of importing raw data.
-function cleanResults(data) {
+function clean(data) {
   return {
     amountAwarded: data["Amount Awarded"],
     awardDate: data["Award Date"],
@@ -59,6 +35,69 @@ function cleanResults(data) {
   };
 }
 
+function buildMatchCriteria(queryParams) {
+  const match = {};
+  if (queryParams.q) {
+    match.$text = { $search: queryParams.q };
+  }
+
+  return match;
+}
+
+function buildFacetsCriteria(queryParams) {
+  return {
+    grantProgramme: [
+      {
+        $group: {
+          _id: "$Grant Programme:Title",
+          count: { $sum: 1 }
+        }
+      }
+    ]
+  };
+}
+
+function buildPagination(queryParams, totalResults) {
+  const perPageCount =
+    (queryParams.limit && parseInt(queryParams.limit)) || 100;
+  const pageParam = queryParams.page && parseInt(queryParams.page);
+  const currentPage = pageParam > 1 ? pageParam : 1;
+  const skipCount = perPageCount * (currentPage - 1);
+  const totalPages = Math.ceil(totalResults / perPageCount);
+
+  return { currentPage, perPageCount, skipCount, totalPages };
+}
+
+async function fetchGrants(collection, queryParams) {
+  const matchCriteria = buildMatchCriteria(queryParams);
+  const facetsCriteria = buildFacetsCriteria(queryParams);
+
+  const totalResults = await collection.find(matchCriteria).count();
+
+  const pagination = buildPagination(queryParams, totalResults);
+
+  const facets = await collection
+    .aggregate([{ $match: matchCriteria }, { $facet: facetsCriteria }])
+    .toArray();
+
+  const grants = await collection
+    .aggregate([{ $match: matchCriteria }])
+    .skip(pagination.skipCount)
+    .limit(pagination.perPageCount)
+    .toArray();
+
+  const results = grants.map(clean);
+
+  return {
+    results,
+    facets,
+    meta: {
+      totalResults,
+      pagination
+    }
+  };
+}
+
 module.exports = async (req, res) => {
   try {
     const collection = await connectToMongo();
@@ -68,9 +107,9 @@ module.exports = async (req, res) => {
     });
 
     const results = await fetchGrants(collection, queryParams);
-
-    send(res, 200, results.map(cleanResults));
+    send(res, 200, results);
   } catch (error) {
+    console.log(error);
     send(res, 500, "Failed to connect to data store");
   }
 };
