@@ -13,28 +13,6 @@ async function connectToMongo() {
     .collection(process.env.MONGO_COLLECTION);
 }
 
-// Better to do this at data model / mongo end? Trade-offs of importing raw data.
-function clean(data) {
-  return {
-    amountAwarded: data["Amount Awarded"],
-    awardDate: data["Award Date"],
-    description: data["Description"],
-    grantProgrammeCode: data["Grant Programme:Code"],
-    grantProgrammeTitle: data["Grant Programme:Title"],
-    identifier: data["Identifier"],
-    organisationType: data["BIGField_Organisation_Type"],
-    recipientCharityNumber: data["Recipient Org:Charity Number"],
-    recipientCompanyNumber: data["Recipient Org:Company Number"],
-    recipientIdentifier: data["Recipient Org:Identifier"],
-    recipientLocation0GeoCode: data["Recipient Org:Location:0:Geographic Code"],
-    recipientLocation0Name: data["Recipient Org:Location:0:Name"],
-    recipientLocation1GeoCode: data["Recipient Org:Location:1:Geographic Code"],
-    recipientLocation1Name: data["Recipient Org:Location:1:Name"],
-    recipientName: data["Recipient Org:Name"],
-    title: data["Title"]
-  };
-}
-
 function buildMatchCriteria(queryParams) {
   const match = {};
   if (queryParams.q) {
@@ -80,13 +58,11 @@ async function fetchGrants(collection, queryParams) {
     .aggregate([{ $match: matchCriteria }, { $facet: facetsCriteria }])
     .toArray();
 
-  const grants = await collection
-    .aggregate([{ $match: matchCriteria }])
+  const results = await collection
+    .aggregate([{ $match: matchCriteria }, { $project: { _id: 0 } }])
     .skip(pagination.skipCount)
     .limit(pagination.perPageCount)
     .toArray();
-
-  const results = grants.map(clean);
 
   return {
     results,
