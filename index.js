@@ -34,9 +34,18 @@ async function buildMatchCriteria(queryParams) {
         try {
             const postcodeData = await lookupPostcode(queryParams.postcode);
             if (postcodeData && postcodeData.result) {
-                match['Recipient Org:Location:1:Geographic Code'] = {
-                    $eq: postcodeData.result.codes.admin_district
-                };
+                match.$or = [
+                    {
+                        'Recipient Org:Location:0:Geographic Code': {
+                            $eq: postcodeData.result.codes.admin_district
+                        }
+                    },
+                    {
+                        'Recipient Org:Location:1:Geographic Code': {
+                            $eq: postcodeData.result.codes.admin_district
+                        }
+                    }
+                ];
             }
         } catch (error) {
             // @TODO
@@ -110,6 +119,6 @@ module.exports = async (req, res) => {
         send(res, 200, results);
     } catch (error) {
         console.log(error);
-        send(res, 500, 'Failed to connect to data store');
+        send(res, 500, error);
     }
 };
