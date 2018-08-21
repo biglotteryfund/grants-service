@@ -123,8 +123,29 @@ async function fetchGrants(collection, queryParams) {
         .aggregate([{$match: matchCriteria}, {$facet: facetsCriteria}])
         .toArray();
 
+    let aggregationPipeline = [
+        {
+            $match: matchCriteria
+        },
+        {
+            $project: {
+                _id: 0
+            },
+        }
+    ];
+
+    if (queryParams.q) {
+        aggregationPipeline.push({
+            $sort: {
+                score: {
+                    $meta: "textScore"
+                }
+            }
+        });
+    }
+
     const results = await collection
-        .aggregate([{$match: matchCriteria}, {$project: {_id: 0}}])
+        .aggregate(aggregationPipeline)
         .skip(pagination.skipCount)
         .limit(pagination.perPageCount)
         .toArray();
