@@ -26,15 +26,26 @@ async function lookupPostcode(postcode) {
 
 async function buildMatchCriteria(queryParams) {
     const match = {};
+
+    match.$or = [];
+
     if (queryParams.q) {
         match.$text = {$search: queryParams.q};
+    }
+
+    if (queryParams.programme) {
+        match.$or.push({
+            'Grant Programme:Title': {
+                $eq: queryParams.programme
+            }
+        });
     }
 
     if (queryParams.postcode) {
         try {
             const postcodeData = await lookupPostcode(queryParams.postcode);
             if (postcodeData && postcodeData.result) {
-                match.$or = [
+                match.$or = match.$or.concat([
                     {
                         'Recipient Org:Location:0:Geographic Code': {
                             $eq: postcodeData.result.codes.admin_district
@@ -45,11 +56,16 @@ async function buildMatchCriteria(queryParams) {
                             $eq: postcodeData.result.codes.admin_district
                         }
                     }
-                ];
+                ]);
             }
         } catch (error) {
             // @TODO
         }
+    }
+
+    // match.$or cannot be an empty array
+    if (match.$or.length === 0) {
+        delete match.$or;
     }
 
     return match;
