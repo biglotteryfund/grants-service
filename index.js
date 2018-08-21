@@ -88,13 +88,21 @@ function buildFacetsCriteria(queryParams) {
                     count: {$sum: 1}
                 }
             }
+        ],
+        OrgType: [
+            {
+                $group: {
+                    _id: '$BIGField_Organisation_Type',
+                    count: {$sum: 1}
+                }
+            }
         ]
     };
 }
 
 function buildPagination(queryParams, totalResults) {
     const perPageCount =
-        (queryParams.limit && parseInt(queryParams.limit)) || 100;
+        (queryParams.limit && parseInt(queryParams.limit)) || 50;
     const pageParam = queryParams.page && parseInt(queryParams.page);
     const currentPage = pageParam > 1 ? pageParam : 1;
     const skipCount = perPageCount * (currentPage - 1);
