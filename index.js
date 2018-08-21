@@ -44,6 +44,15 @@ async function buildMatchCriteria(queryParams) {
         });
     }
 
+    if (queryParams.orgType) {
+        match.$and.push({
+            'BIGField_Organisation_Type': {
+                $regex: `^${queryParams.orgType}`,
+                $options: 'i'
+            }
+        });
+    }
+
     if (queryParams.postcode) {
         try {
             const postcodeData = await lookupPostcode(queryParams.postcode);
@@ -89,7 +98,7 @@ function buildFacetsCriteria(queryParams) {
                 }
             }
         ],
-        OrgType: [
+        orgType: [
             {
                 $group: {
                     _id: '$BIGField_Organisation_Type',
