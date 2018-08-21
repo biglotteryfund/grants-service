@@ -3,7 +3,6 @@ require('dotenv').config();
 const {send} = require('micro');
 const url = require('url');
 const qs = require('qs');
-const {concat} = require('lodash');
 const request = require('request-promise-native');
 const MongoClient = require('mongodb').MongoClient;
 
