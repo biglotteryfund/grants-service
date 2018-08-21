@@ -27,14 +27,17 @@ async function lookupPostcode(postcode) {
 async function buildMatchCriteria(queryParams) {
     const match = {};
 
+    match.$and = [];
     match.$or = [];
 
     if (queryParams.q) {
-        match.$text = {$search: queryParams.q};
+        match.$text = {
+            $search: queryParams.q
+        };
     }
 
     if (queryParams.programme) {
-        match.$or.push({
+        match.$and.push({
             'Grant Programme:Title': {
                 $eq: queryParams.programme
             }
@@ -63,7 +66,12 @@ async function buildMatchCriteria(queryParams) {
         }
     }
 
-    // match.$or cannot be an empty array
+    // $and and $or cannot be empty arrays
+
+    if (match.$and.length === 0) {
+        delete match.$and;
+    }
+
     if (match.$or.length === 0) {
         delete match.$or;
     }
