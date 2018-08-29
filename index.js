@@ -1,9 +1,9 @@
 'use strict';
+
+const serverless = require('serverless-http');
+const express = require('express');
+const app = express();
 require('dotenv').config();
-const {send} = require('micro');
-const url = require('url');
-const qs = require('qs');
-const {concat} = require('lodash');
 const request = require('request-promise-native');
 const MongoClient = require('mongodb').MongoClient;
 
@@ -169,18 +169,15 @@ async function fetchGrants(collection, queryParams) {
     };
 }
 
-module.exports = async (req, res) => {
+app.get('/', async (req, res) => {
     try {
         const collection = await connectToMongo();
-
-        const queryParams = qs.parse(url.parse(req.url).search, {
-            ignoreQueryPrefix: true
-        });
-
-        const results = await fetchGrants(collection, queryParams);
-        send(res, 200, results);
+        const results = await fetchGrants(collection, req.query);
+        res.send(results);
     } catch (error) {
         console.log(error);
-        send(res, 500, error);
+        res.send(error);
     }
-};
+});
+
+module.exports.handler = serverless(app);
