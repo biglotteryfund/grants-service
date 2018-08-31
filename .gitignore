@@ -1,5 +1,6 @@
-node_modules
+.DS_Store
 .env
 .idea
 .serverless
+node_modules
 test/globalConfig.json
