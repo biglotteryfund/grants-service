@@ -10,6 +10,6 @@ cache:
     - $HOME/.mongodb-binaries
 deploy:
   provider: script
-  script: ./node_modules.bin/sls deploy --stage=test --region=eu-west-2
+  script: "./node_modules/.bin/sls deploy --stage=test --region=eu-west-2"
   on:
     branch: master
