@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "start": "sls offline start",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "dependencies": {
     "dotenv": "^6.0.0",
@@ -19,8 +19,14 @@
   },
   "devDependencies": {
     "eslint": "^5.4.0",
+    "jest": "^23.5.0",
+    "jest-environment-node": "^23.4.0",
+    "mongodb-memory-server": "^2.1.0",
     "nodemon": "^1.17.5",
     "serverless-domain-manager": "^2.6.0",
     "serverless-offline": "^3.25.9"
+  },
+  "jest": {
+    "testEnvironment": "node"
   }
 }
