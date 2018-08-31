@@ -28,6 +28,8 @@
     "serverless-offline": "^3.25.9"
   },
   "jest": {
-    "testEnvironment": "node"
+    "globalSetup": "./test/setup.js",
+    "globalTeardown": "./test/teardown.js",
+    "testEnvironment": "./test/mongo-environment.js"
   }
 }
