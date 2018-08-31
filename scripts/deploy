@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+
+./node_modules/.bin/sls deploy --stage=test --region=eu-west-2
