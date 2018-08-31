@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "start": "sls offline start",
-    "test": "jest"
+    "test": "jest --detectOpenHandles"
   },
   "dependencies": {
     "dotenv": "^6.0.0",
