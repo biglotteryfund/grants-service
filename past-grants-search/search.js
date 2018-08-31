@@ -1,9 +1,5 @@
 'use strict';
-const express = require('express');
-const router = express.Router();
 const request = require('request-promise-native');
-
-const { connectToMongo } = require('./mongo');
 
 async function lookupPostcode(postcode) {
     return request({
@@ -79,7 +75,7 @@ async function buildMatchCriteria(queryParams) {
     return match;
 }
 
-function buildFacetsCriteria(queryParams) {
+function buildFacetsCriteria() {
     return {
         grantProgramme: [
             {
@@ -113,7 +109,7 @@ function buildPagination(queryParams, totalResults) {
 
 async function fetchGrants(collection, queryParams) {
     const matchCriteria = await buildMatchCriteria(queryParams);
-    const facetsCriteria = buildFacetsCriteria(queryParams);
+    const facetsCriteria = buildFacetsCriteria();
 
     const totalResults = await collection.find(matchCriteria).count();
 
@@ -160,15 +156,6 @@ async function fetchGrants(collection, queryParams) {
     };
 }
 
-router.route('/').get(async (req, res) => {
-    try {
-        const collection = await connectToMongo();
-        const results = await fetchGrants(collection, req.query);
-        res.send(results);
-    } catch (error) {
-        console.log(error);
-        res.send(error);
-    }
-});
-
-module.exports = router;
+module.exports = {
+    fetchGrants
+};
