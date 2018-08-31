@@ -69,7 +69,9 @@ describe('Past Grants Search', () => {
         const grants = await queryGrants({
             postcode: 'E14 0FL'
         });
-        expect(grants.results[0].Title).toEqual('Asian Women Lone Parents Association');
+        expect(grants.results[0].Title).toEqual(
+            'Asian Women Lone Parents Association'
+        );
     });
 
     it('should combine filters', async () => {

@@ -97,7 +97,8 @@ function buildFacetsCriteria() {
 }
 
 function buildPagination(queryParams, totalResults) {
-    const perPageCount = (queryParams.limit && parseInt(queryParams.limit)) || 50;
+    const perPageCount =
+        (queryParams.limit && parseInt(queryParams.limit)) || 50;
     const pageParam = queryParams.page && parseInt(queryParams.page);
     const currentPage = pageParam > 1 ? pageParam : 1;
     const skipCount = perPageCount * (currentPage - 1);
@@ -114,7 +115,9 @@ async function fetchGrants(collection, queryParams) {
 
     const pagination = buildPagination(queryParams, totalResults);
 
-    const facets = await collection.aggregate([{ $match: matchCriteria }, { $facet: facetsCriteria }]).toArray();
+    const facets = await collection
+        .aggregate([{ $match: matchCriteria }, { $facet: facetsCriteria }])
+        .toArray();
 
     let aggregationPipeline = [
         {
