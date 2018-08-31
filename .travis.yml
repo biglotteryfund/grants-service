@@ -1,13 +1,21 @@
+# Defaults
 language: node_js
-node_js:
-  - "8"
-before_install:
-  - npm i -g npm@6
+node_js: '8'
+
+# Install npm 6
+before_install: npm i -g npm@6
+
+# Install dependencies
+install: npm ci --quiet --prefer-offline
+
+# Cache locations
 cache:
   directories:
     - node_modules
     # Cache mongo binary installed by mongodb-memory-server
     - $HOME/.mongodb-binaries
+
+# Deploy steps
 deploy:
 - provider: script
   script: npm run deployTest
