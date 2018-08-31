@@ -6,8 +6,10 @@ before_install:
 cache:
   directories:
     - node_modules
+    # Cache mongo binary installed by mongodb-memory-server
+    - $HOME/.mongodb-binaries
 deploy:
   provider: script
-  script: npx sls deploy --stage=test --region=eu-west-2
+  script: ./node_modules.bin/sls deploy --stage=test --region=eu-west-2
   on:
     branch: travis-deploy
