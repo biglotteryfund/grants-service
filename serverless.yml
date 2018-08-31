@@ -3,7 +3,7 @@ service: past-grants-search
 provider:
   name: aws
   runtime: nodejs8.10
-  stage: dev
+  stage: test
   region: eu-west-2
 
 functions:
@@ -25,9 +25,8 @@ custom:
   domains:
     prod: lambda.blf.digital
     test: test-lambda.blf.digital
-    dev: dev-lambda.blf.digital
   customDomain:
-    basePath: ''
+    basePath: 'past-grants-search'
     domainName: ${self:custom.domains.${self:custom.stage}}
     stage: '${self:custom.stage}'
     createRoute53Record: true
