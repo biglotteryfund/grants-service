@@ -4,11 +4,38 @@
   "description": "",
   "main": "index.js",
   "private": true,
+  "engines": {
+    "node": ">=8"
+  },
   "scripts": {
     "start": "sls offline start",
-    "test": "jest --detectOpenHandles",
+    "test": "eslint . && jest --detectOpenHandles",
+    "format": "prettier --single-quote --write *.js *.yml {grants,lib}/**/*.js README.md",
     "deployTest": "sls deploy --stage=test --region=eu-west-2",
     "deployProd": "sls deploy --stage=prod --region=eu-west-2"
+  },
+  "eslintConfig": {
+    "plugins": [
+      "node"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:node/recommended"
+    ],
+    "rules": {
+      "no-unused-vars": "warn",
+      "node/no-unpublished-require": "off",
+      "node/shebang": "off",
+      "strict": [
+        "warn",
+        "safe"
+      ]
+    }
+  },
+  "jest": {
+    "globalSetup": "./test/setup.js",
+    "globalTeardown": "./test/teardown.js",
+    "testEnvironment": "./test/mongo-environment.js"
   },
   "dependencies": {
     "dotenv": "^6.0.0",
@@ -20,18 +47,15 @@
     "serverless-http": "^1.6.0"
   },
   "devDependencies": {
-    "eslint": "^5.4.0",
+    "eslint": "5.4.0",
+    "eslint-plugin-node": "7.0.1",
     "jest": "^23.5.0",
     "jest-environment-node": "^23.4.0",
     "mongodb-memory-server": "^2.1.0",
     "nodemon": "^1.17.5",
+    "prettier": "^1.14.2",
     "serverless": "^1.30.3",
     "serverless-domain-manager": "^2.6.0",
     "serverless-offline": "^3.25.9"
-  },
-  "jest": {
-    "globalSetup": "./test/setup.js",
-    "globalTeardown": "./test/teardown.js",
-    "testEnvironment": "./test/mongo-environment.js"
   }
 }

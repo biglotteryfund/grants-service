@@ -12,7 +12,7 @@ module.exports = class MongoEnvironment extends NodeEnvironment {
     }
 
     async setup() {
-        console.log('Setup MongoDB Test Environment');
+        console.log('Setup MongoDB Test Environment');  // eslint-disable-line no-console
 
         const globalConfig = JSON.parse(fs.readFileSync(globalConfigPath, 'utf-8'));
 
@@ -23,7 +23,7 @@ module.exports = class MongoEnvironment extends NodeEnvironment {
     }
 
     async teardown() {
-        console.log('Teardown MongoDB Test Environment');
+        console.log('Teardown MongoDB Test Environment');  // eslint-disable-line no-console
 
         await super.teardown();
     }

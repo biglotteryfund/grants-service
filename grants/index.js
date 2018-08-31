@@ -12,7 +12,6 @@ router.route('/').get(async (req, res) => {
         client.close();
         res.send(results);
     } catch (error) {
-        console.log(error);
         res.send(error);
     }
 });

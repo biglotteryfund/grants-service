@@ -24,7 +24,7 @@ module.exports = async function() {
 
     // Write global config to disk because all tests run in different contexts.
     fs.writeFileSync(globalConfigPath, JSON.stringify(mongoConfig));
-    console.log('Config is written');
+    console.log('Config is written'); // eslint-disable-line no-console
 
     // Set reference to mongod in order to close the server during teardown.
     global.__MONGOD__ = mongod;
