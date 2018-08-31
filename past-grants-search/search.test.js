@@ -90,9 +90,5 @@ describe('Past Grants Search', () => {
         });
         expect(grants.results.length).toBe(0);
     });
-
-
-
-
-
+    
 });
