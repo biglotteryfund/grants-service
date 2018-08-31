@@ -71,6 +71,26 @@ describe('Past Grants Search', () => {
         expect(grants.results[0].Title).toEqual('Asian Women Lone Parents Association');
     });
 
+    it('should combine filters', async () => {
+        const grants = await queryGrants({
+            orgType: 'Charity',
+            q: 'social disadvantage',
+            programme: 'Awards for All',
+            postcode: 'SW16 2AL'
+        });
+        expect(grants.results[0].Title).toEqual('Calm Confident Kids');
+    });
+
+    it('should return empty results for invalid queries', async () => {
+        const grants = await queryGrants({
+            orgType: 'MadeUpOrg',
+            q: 'purple monkey dishwasher',
+            programme: 'Big Cheese Fund',
+            postcode: 'N1 9GU'
+        });
+        expect(grants.results.length).toBe(0);
+    });
+
 
 
 
