@@ -6,7 +6,9 @@
   "private": true,
   "scripts": {
     "start": "sls offline start",
-    "test": "jest --detectOpenHandles"
+    "test": "jest --detectOpenHandles",
+    "deployTest": "sls deploy --stage=test --region=eu-west-2",
+    "deployProd": "sls deploy --stage=prod --region=eu-west-2"
   },
   "dependencies": {
     "dotenv": "^6.0.0",

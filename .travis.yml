@@ -10,7 +10,7 @@ cache:
     - $HOME/.mongodb-binaries
 deploy:
   provider: script
-  script: scripts/deploy
+  script: npm run deployTest
   skip_cleanup: true
   on:
     branch: master
