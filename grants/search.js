@@ -33,7 +33,7 @@ async function buildMatchCriteria(queryParams) {
 
     if (queryParams.orgType) {
         match.$and.push({
-            'BIGField_Organisation_Type': {
+            BIGField_Organisation_Type: {
                 $regex: `^${queryParams.orgType}`,
                 $options: 'i'
             }
@@ -81,7 +81,7 @@ function buildFacetsCriteria() {
             {
                 $group: {
                     _id: '$Grant Programme:Title',
-                    count: {$sum: 1}
+                    count: { $sum: 1 }
                 }
             }
         ],
@@ -89,7 +89,7 @@ function buildFacetsCriteria() {
             {
                 $group: {
                     _id: '$BIGField_Organisation_Type',
-                    count: {$sum: 1}
+                    count: { $sum: 1 }
                 }
             }
         ]
@@ -97,14 +97,13 @@ function buildFacetsCriteria() {
 }
 
 function buildPagination(queryParams, totalResults) {
-    const perPageCount =
-        (queryParams.limit && parseInt(queryParams.limit)) || 50;
+    const perPageCount = (queryParams.limit && parseInt(queryParams.limit)) || 50;
     const pageParam = queryParams.page && parseInt(queryParams.page);
     const currentPage = pageParam > 1 ? pageParam : 1;
     const skipCount = perPageCount * (currentPage - 1);
     const totalPages = Math.ceil(totalResults / perPageCount);
 
-    return {currentPage, perPageCount, skipCount, totalPages};
+    return { currentPage, perPageCount, skipCount, totalPages };
 }
 
 async function fetchGrants(collection, queryParams) {
@@ -115,9 +114,7 @@ async function fetchGrants(collection, queryParams) {
 
     const pagination = buildPagination(queryParams, totalResults);
 
-    const facets = await collection
-        .aggregate([{$match: matchCriteria}, {$facet: facetsCriteria}])
-        .toArray();
+    const facets = await collection.aggregate([{ $match: matchCriteria }, { $facet: facetsCriteria }]).toArray();
 
     let aggregationPipeline = [
         {
@@ -126,7 +123,7 @@ async function fetchGrants(collection, queryParams) {
         {
             $project: {
                 _id: 0
-            },
+            }
         }
     ];
 
@@ -134,7 +131,7 @@ async function fetchGrants(collection, queryParams) {
         aggregationPipeline.push({
             $sort: {
                 score: {
-                    $meta: "textScore"
+                    $meta: 'textScore'
                 }
             }
         });

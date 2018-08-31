@@ -11,15 +11,15 @@ functions:
     handler: index.handler
     timeout: 10 # in seconds
     events:
-    - http: ANY /
-    - http: 'ANY {proxy+}'
+      - http: ANY /
+      - http: 'ANY {proxy+}'
 
 package:
   exclude:
-  - .*
-  - .git/**
-  - scripts/**
-  - test/**
+    - .*
+    - .git/**
+    - scripts/**
+    - test/**
 
 plugins:
   - serverless-offline

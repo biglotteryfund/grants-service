@@ -1,6 +1,6 @@
 /* eslint-env jest */
 'use strict';
-const {MongoClient} = require('mongodb');
+const { MongoClient } = require('mongodb');
 const mockGrantData = require('../test/fixtures/grants');
 
 const { fetchGrants } = require('./search');
@@ -21,16 +21,17 @@ describe('Past Grants Search', () => {
         // add the index
         grantsCollection.createIndex(
             {
-                Title: "text",
-                Description: "text", "Recipient Org:Name": "text"
+                Title: 'text',
+                Description: 'text',
+                'Recipient Org:Name': 'text'
             },
             {
                 weights: {
                     Title: 10,
-                    "Recipient Org:Name": 5,
+                    'Recipient Org:Name': 5,
                     Description: 1
                 },
-                name: "TextIndex"
+                name: 'TextIndex'
             }
         );
     });
@@ -41,7 +42,7 @@ describe('Past Grants Search', () => {
     });
 
     // Convenience method for querying directly without passing a collection
-    const queryGrants = async (query) => fetchGrants(grantsCollection, query);
+    const queryGrants = async query => fetchGrants(grantsCollection, query);
 
     it('should find grants by text search', async () => {
         const grants = await queryGrants({
@@ -90,5 +91,4 @@ describe('Past Grants Search', () => {
         });
         expect(grants.results.length).toBe(0);
     });
-    
 });
