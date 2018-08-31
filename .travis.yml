@@ -9,8 +9,13 @@ cache:
     # Cache mongo binary installed by mongodb-memory-server
     - $HOME/.mongodb-binaries
 deploy:
-  provider: script
+- provider: script
   script: npm run deployTest
   skip_cleanup: true
   on:
     branch: master
+- provider: script
+  script: npm run deployProd
+  skip_cleanup: true
+  on:
+    tags: true
