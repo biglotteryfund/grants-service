@@ -20,7 +20,7 @@ const exitWithMessage = msg => {
 };
 
 if (!argv.f) {
-    exitWithMessage('Exiting: the -f / --file parameter is required.')
+    exitWithMessage('Exiting: the -f / --file parameter is required.');
 }
 
 // Turn date fields into actual Date objects

@@ -1,0 +1,29 @@
+# Defaults
+language: node_js
+node_js: '8'
+
+# Install npm 6
+before_install: npm i -g npm@6
+
+# Install dependencies
+install: npm ci --quiet --prefer-offline
+
+# Cache locations
+cache:
+  directories:
+    - node_modules
+    # Cache mongo binary installed by mongodb-memory-server
+    - $HOME/.mongodb-binaries
+
+# Deploy steps
+deploy:
+- provider: script
+  script: npm run deployTest
+  skip_cleanup: true
+  on:
+    branch: master
+- provider: script
+  script: npm run deployProd
+  skip_cleanup: true
+  on:
+    tags: true
