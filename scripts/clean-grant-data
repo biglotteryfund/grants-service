@@ -1,0 +1,131 @@
+#!/usr/bin/env node
+'use strict';
+const fs = require('fs');
+const es = require('event-stream');
+const moment = require('moment');
+const _ = require('lodash');
+const split = require('split');
+
+const argv = require('yargs')
+    .alias('f', 'file')
+    .describe('f', 'The path to a JSON file to clean')
+    .alias('o', 'output')
+    .describe('b', 'The path to the JSON file to output')
+    .help('h')
+    .alias('h', 'help').argv;
+
+// Turn date fields into actual Date objects
+const parseDates = data => {
+    const dateFields = [
+        'Award Date',
+        'Planned Dates:Start Date',
+        'Planned Dates:End Date'
+    ];
+    dateFields.forEach(dateField => {
+        if (data[dateField]) {
+            let d = moment(data[dateField].trim(), 'YYYY-MM-DD');
+            data[dateField] = d.toDate();
+        }
+    });
+    return data;
+};
+
+// Split organisation strings into proper structures
+const separateOrgType = data => {
+    const orgTypeKey = 'BIGField_Organisation_Type';
+    if (data[orgTypeKey]) {
+        const parts = data[orgTypeKey].split(' : ');
+        data.organisationType = data[orgTypeKey];
+        delete data[orgTypeKey];
+        if (parts.length > 1) {
+            data.organisationType = parts[0];
+            data.organisationSubtype = parts[1];
+        }
+    }
+    return data;
+};
+
+// Rename the fields to something more useful and drop unused fields
+// http://standard.threesixtygiving.org/en/latest/_static/docson/index.html#../360-giving-schema.json
+const rename = data => {
+    let newData = {
+        id: data['Identifier'],
+        title: data['Title'],
+        description: data['Description'],
+        currency: data['Currency'],
+        amountAwarded: data['Amount Awarded'],
+        awardDate: data['Award Date'],
+        plannedDates: [
+            {
+                startDate: data['Planned Dates:Start Date'],
+            }
+        ],
+        recipientOrganization: [
+            {
+                id: data['Recipient Org:Identifier'],
+                name: data['Recipient Org:Name'],
+                charityNumber: data['Recipient Org:Charity Number'] || undefined,
+                companyNumber: data['Recipient Org:Company Number'] || undefined,
+                organisationType: data['organisationType'] // @TODO handle whole string
+            }
+        ],
+        beneficiaryLocation: [
+            {
+                name: data['Recipient Org:Location:0:Name'],
+                geoCode: data['Recipient Org:Location:0:Geographic Code'],
+                geoCodeType: 'WD' // @TODO check this is right
+            },
+            {
+                name: data['Recipient Org:Location:1:Name'],
+                geoCode: data['Recipient Org:Location:1:Geographic Code'],
+                geoCodeType: 'CMLAD' // @TODO check this is right
+            },
+        ],
+        fundingOrganization: [
+            {
+                id: data['Funding Org:Identifier'],
+                name: data['Funding Org:Name'],
+            }
+        ],
+        grantProgramme: [
+            {
+                code: data['Grant Programme:Code'],
+                title: data['Grant Programme:Title']
+            }
+        ],
+        dateModified: data['Last modified']
+    };
+
+    if (data['Planned Dates:End Date']) {
+        newData.plannedDates.push({
+            endDate: data['Planned Dates:End Date'],
+        });
+    }
+
+    // Strip out null / undefined
+    return _.pickBy(newData, _.identity);
+
+};
+
+const outputFileStream = fs.createWriteStream(argv.o, { flags:'a' });
+
+const getStream = function () {
+    const stream = fs.createReadStream(argv.f, {encoding: 'utf8'});
+    return stream.pipe(split(JSON.parse, null, { trailing: false }));
+};
+
+console.log('Beginning cleaning of grant data...');
+
+getStream().pipe(es.mapSync((data) => {
+    let cleaned = [data]
+        .map(parseDates)
+        .map(separateOrgType)
+        .map(rename);
+    outputFileStream.write(JSON.stringify(cleaned[0], null, 4) + '\n');
+}).on('error', function (err) {
+    // handle any errors
+    console.log('Error parsing JSON', err);
+}).on('end', () => {
+    console.log('Finished cleaning JSON - file written successfully.');
+    outputFileStream.end();
+}));

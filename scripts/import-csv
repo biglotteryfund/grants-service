@@ -1,0 +1,27 @@
+#!/bin/bash
+set -e
+
+INPUT_CSV=$1
+COLLECTION_NAME=$2
+
+if [ -z "$1" ]
+  then
+    echo "First argument should be a CSV path"
+    exit 1
+fi
+
+if [ -z "$2" ]
+  then
+    echo "Second argument should be a DB collection name to import into"
+    exit 1
+fi
+
+echo "Parsing CSV grant data into JSON...";
+$(npm bin)/csv-parser "$INPUT_CSV" -o tmp-parsed.json;
+echo "Done.";
+./scripts/clean-grant-data -f tmp-parsed.json -o tmp-clean.json;
+echo 'Importing grant data into collection "$COLLECTION_NAME"';
+./scripts/import-grants tmp-clean.json "$COLLECTION_NAME";
+rm tmp-parsed.json tmp-clean.json;
+echo "Cleanup complete";
+echo "CSV import successful!";
