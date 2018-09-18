@@ -66,19 +66,19 @@ const rename = data => {
                 name: data['Recipient Org:Name'],
                 charityNumber: data['Recipient Org:Charity Number'] || undefined,
                 companyNumber: data['Recipient Org:Company Number'] || undefined,
-                organisationType: data['organisationType'] // @TODO handle whole string
+                organisationType: data['organisationType'] // @TODO https://github.com/OpenDataServices/grantnav/issues/490
             }
         ],
         beneficiaryLocation: [
             {
                 name: data['Recipient Org:Location:0:Name'],
                 geoCode: data['Recipient Org:Location:0:Geographic Code'],
-                geoCodeType: 'WD' // @TODO check this is right
+                geoCodeType: 'WD'
             },
             {
                 name: data['Recipient Org:Location:1:Name'],
                 geoCode: data['Recipient Org:Location:1:Geographic Code'],
-                geoCodeType: 'CMLAD' // @TODO check this is right
+                geoCodeType: 'CMLAD'
             },
         ],
         fundingOrganization: [
