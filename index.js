@@ -3,11 +3,6 @@ const serverless = require('serverless-http');
 const express = require('express');
 const app = express();
 require('dotenv').config();
-const {send} = require('micro');
-const url = require('url');
-const qs = require('qs');
-const request = require('request-promise-native');
-const MongoClient = require('mongodb').MongoClient;
 
 // Mount routes
 // The path here must match the basePath in serverless.yml for the domain
