@@ -53,7 +53,7 @@ const rename = data => {
         title: data['Title'],
         description: data['Description'],
         currency: data['Currency'],
-        amountAwarded: data['Amount Awarded'],
+        amountAwarded: parseInt(data['Amount Awarded'], 10),
         awardDate: data['Award Date'],
         plannedDates: [
             {
