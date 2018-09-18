@@ -56,9 +56,7 @@ describe('Past Grants Search', () => {
         const grants = await queryGrants({
             postcode: 'BN13 1NQ'
         });
-        expect(grants.results[0].title).toEqual(
-            'Meetings and outings'
-        );
+        expect(grants.results[0].title).toEqual('Meetings and outings');
     });
 
     it('should combine filters', async () => {
