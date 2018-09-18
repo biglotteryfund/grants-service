@@ -72,21 +72,49 @@ async function buildMatchCriteria(queryParams) {
 
 function buildFacetsCriteria() {
     return {
+        amountAwarded: [
+            {
+                $bucket: {
+                    groupBy: '$amountAwarded',
+                    boundaries: [0, 10000, 100000, 1000000, Infinity],
+                    output: {
+                        count: { $sum: 1 }
+                    }
+                }
+            }
+        ],
+        awardDate: [
+            {
+                $group: {
+                    _id: {
+                        $year: { $dateFromString: { dateString: '$awardDate' } }
+                    },
+                    count: { $sum: 1 }
+                }
+            }
+        ],
         grantProgramme: [
             {
                 $group: {
                     _id: { $arrayElemAt: ['$grantProgramme.title', 0] },
-                    count: { $sum: 1 },
-                },
-            }
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } }
         ],
         orgType: [
             {
                 $group: {
-                    _id: { $arrayElemAt: ['$recipientOrganization.organisationType', 0] },
+                    _id: {
+                        $arrayElemAt: [
+                            '$recipientOrganization.organisationType',
+                            0
+                        ]
+                    },
                     count: { $sum: 1 }
                 }
-            }
+            },
+            { $sort: { _id: 1 } }
         ]
     };
 }
