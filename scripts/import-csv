@@ -2,7 +2,8 @@
 set -e
 
 INPUT_CSV=$1
-COLLECTION_NAME=$2
+DATABASE_NAME=$2
+COLLECTION_NAME=$3
 
 if [ -z "$1" ]
   then
@@ -12,7 +13,13 @@ fi
 
 if [ -z "$2" ]
   then
-    echo "Second argument should be a DB collection name to import into"
+    echo "Second argument should be the database to use"
+    exit 1
+fi
+
+if [ -z "$3" ]
+  then
+    echo "Second argument should be a collection name to import into"
     exit 1
 fi
 
@@ -25,8 +32,8 @@ echo "Done.";
 ./scripts/clean-grant-data -f tmp-parsed.json -o tmp-clean.json;
 
 # 3. Import cleaned JSON into Mongo
-echo 'Importing grant data into collection "$COLLECTION_NAME"';
-./scripts/import-grants tmp-clean.json "$COLLECTION_NAME";
+echo "Importing grant data into '$COLLECTION_NAME' collection in database '$DATABASE_NAME'";
+./scripts/import-grants tmp-clean.json "$DATABASE_NAME" "$COLLECTION_NAME";
 
 # 4. Cleanup
 rm tmp-parsed.json tmp-clean.json;
