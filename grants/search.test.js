@@ -40,35 +40,35 @@ describe('Past Grants Search', () => {
 
     it('should find grants by programme', async () => {
         const grants = await queryGrants({
-            programme: 'National Lottery Awards for All'
+            programme: 'Awards for All'
         });
-        expect(grants.results.length).toBe(9);
+        expect(grants.results.length).toBe(50);
     });
 
     it('should find grants by organisation type', async () => {
         const grants = await queryGrants({
             orgType: 'Charity'
         });
-        expect(grants.results.length).toBe(35);
+        expect(grants.results.length).toBe(41);
     });
 
     it('should find grants by postcode', async () => {
         const grants = await queryGrants({
-            postcode: 'E14 0FL'
+            postcode: 'BN13 1NQ'
         });
-        expect(grants.results[0].Title).toEqual(
-            'Asian Women Lone Parents Association'
+        expect(grants.results[0].title).toEqual(
+            'Meetings and outings'
         );
     });
 
     it('should combine filters', async () => {
         const grants = await queryGrants({
             orgType: 'Charity',
-            q: 'social disadvantage',
+            q: 'children tennis',
             programme: 'Awards for All',
-            postcode: 'SW16 2AL'
+            postcode: 'BN8 4JL'
         });
-        expect(grants.results[0].Title).toEqual('Calm Confident Kids');
+        expect(grants.results[0].title).toEqual('New Equipment');
     });
 
     it('should return empty results for invalid queries', async () => {
