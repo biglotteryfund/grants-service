@@ -24,7 +24,9 @@ const parseDates = data => {
     dateFields.forEach(dateField => {
         if (data[dateField]) {
             let d = moment(data[dateField].trim(), 'YYYY-MM-DD');
-            data[dateField] = d.toDate();
+            data[dateField] = {
+                $date: d.toDate()
+            };
         }
     });
     return data;
