@@ -2,6 +2,7 @@
 'use strict';
 const { MongoClient } = require('mongodb');
 const mockGrantData = require('../test/fixtures/grants');
+const { INDICES } = require('../lib/mongo');
 
 const { fetchGrants } = require('./search');
 
@@ -18,22 +19,8 @@ describe('Past Grants Search', () => {
         grantsCollection = db.collection('grants');
         await grantsCollection.insertMany(mockGrantData.results);
 
-        // add the index
-        grantsCollection.createIndex(
-            {
-                Title: 'text',
-                Description: 'text',
-                'Recipient Org:Name': 'text'
-            },
-            {
-                weights: {
-                    Title: 10,
-                    'Recipient Org:Name': 5,
-                    Description: 1
-                },
-                name: 'TextIndex'
-            }
-        );
+        // add the indices
+        grantsCollection.createIndex(INDICES.spec, INDICES.options);
     });
 
     afterAll(async () => {
