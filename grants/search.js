@@ -25,7 +25,7 @@ async function buildMatchCriteria(queryParams) {
 
     if (queryParams.programme) {
         match.$and.push({
-            'Grant Programme:Title': {
+            'grantProgramme.title': {
                 $eq: queryParams.programme
             }
         });
@@ -33,7 +33,7 @@ async function buildMatchCriteria(queryParams) {
 
     if (queryParams.orgType) {
         match.$and.push({
-            BIGField_Organisation_Type: {
+            'recipientOrganization.organisationType': {
                 $regex: `^${queryParams.orgType}`,
                 $options: 'i'
             }
@@ -46,19 +46,14 @@ async function buildMatchCriteria(queryParams) {
             if (postcodeData && postcodeData.result) {
                 match.$or = match.$or.concat([
                     {
-                        'Recipient Org:Location:0:Geographic Code': {
-                            $eq: postcodeData.result.codes.admin_district
-                        }
-                    },
-                    {
-                        'Recipient Org:Location:1:Geographic Code': {
+                        'beneficiaryLocation.geoCode': {
                             $eq: postcodeData.result.codes.admin_district
                         }
                     }
                 ]);
             }
         } catch (error) {
-            // @TODO
+            // @TODO handle postcode lookup failure
         }
     }
 
@@ -80,15 +75,15 @@ function buildFacetsCriteria() {
         grantProgramme: [
             {
                 $group: {
-                    _id: '$Grant Programme:Title',
-                    count: { $sum: 1 }
-                }
+                    _id: { $arrayElemAt: ['$grantProgramme.title', 0] },
+                    count: { $sum: 1 },
+                },
             }
         ],
         orgType: [
             {
                 $group: {
-                    _id: '$BIGField_Organisation_Type',
+                    _id: { $arrayElemAt: ['$recipientOrganization.organisationType', 0] },
                     count: { $sum: 1 }
                 }
             }
