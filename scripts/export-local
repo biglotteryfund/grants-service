@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+BACKUP_DIR=$1
+
+if [ -z "$1" ]
+  then
+    echo "First argument should be a path to a backup directory"
+    exit 1
+fi
+
+mongodump --db blf --collection grants --out "$BACKUP_DIR"

@@ -2,6 +2,7 @@
 'use strict';
 const { MongoClient } = require('mongodb');
 const mockGrantData = require('../test/fixtures/grants');
+const { INDICES } = require('../lib/mongo');
 
 const { fetchGrants } = require('./search');
 
@@ -18,22 +19,8 @@ describe('Past Grants Search', () => {
         grantsCollection = db.collection('grants');
         await grantsCollection.insertMany(mockGrantData.results);
 
-        // add the index
-        grantsCollection.createIndex(
-            {
-                Title: 'text',
-                Description: 'text',
-                'Recipient Org:Name': 'text'
-            },
-            {
-                weights: {
-                    Title: 10,
-                    'Recipient Org:Name': 5,
-                    Description: 1
-                },
-                name: 'TextIndex'
-            }
-        );
+        // add the indices
+        grantsCollection.createIndex(INDICES.spec, INDICES.options);
     });
 
     afterAll(async () => {
@@ -48,49 +35,48 @@ describe('Past Grants Search', () => {
         const grants = await queryGrants({
             q: 'youth'
         });
-        expect(grants.results.length).toBe(5);
+        expect(grants.results.length).toBe(1);
     });
 
     it('should find grants by programme', async () => {
         const grants = await queryGrants({
-            programme: 'National Lottery Awards for All'
+            programme: 'Awards for All'
         });
-        expect(grants.results.length).toBe(9);
+        expect(grants.results.length).toBe(50);
     });
 
     it('should find grants by organisation type', async () => {
         const grants = await queryGrants({
             orgType: 'Charity'
         });
-        expect(grants.results.length).toBe(35);
+        expect(grants.results.length).toBe(41);
     });
 
     it('should find grants by postcode', async () => {
         const grants = await queryGrants({
-            postcode: 'E14 0FL'
+            postcode: 'BN13 1NQ'
         });
-        expect(grants.results[0].Title).toEqual(
-            'Asian Women Lone Parents Association'
-        );
+        expect(grants.results[0].title).toEqual('Meetings and outings');
     });
 
     it('should combine filters', async () => {
         const grants = await queryGrants({
             orgType: 'Charity',
-            q: 'social disadvantage',
+            q: 'children tennis',
             programme: 'Awards for All',
-            postcode: 'SW16 2AL'
+            postcode: 'BN8 4JL'
         });
-        expect(grants.results[0].Title).toEqual('Calm Confident Kids');
+        expect(grants.results[0].title).toEqual('New Equipment');
     });
 
     it('should return empty results for invalid queries', async () => {
-        const grants = await queryGrants({
+        const result = await queryGrants({
             orgType: 'MadeUpOrg',
             q: 'purple monkey dishwasher',
             programme: 'Big Cheese Fund',
             postcode: 'N1 9GU'
         });
-        expect(grants.results.length).toBe(0);
+
+        expect(result).toMatchSnapshot();
     });
 });

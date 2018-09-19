@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Past Grants Search should return empty results for invalid queries 1`] = `
+Object {
+  "facets": Object {
+    "amountAwarded": Array [],
+    "awardDate": Array [],
+    "grantProgramme": Array [],
+    "orgType": Array [],
+  },
+  "meta": Object {
+    "pagination": Object {
+      "currentPage": 1,
+      "perPageCount": 50,
+      "skipCount": 0,
+      "totalPages": 0,
+    },
+    "totalResults": 0,
+  },
+  "results": Array [],
+}
+`;

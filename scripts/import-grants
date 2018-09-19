@@ -1,4 +1,8 @@
 #!/bin/bash
 set -e
 
-mongoimport -d grants -c blf --type csv --file "$1" --headerline
+INPUT_JSON=$1
+DATABASE_NAME=$2
+COLLECTION_NAME=$3
+
+mongoimport -d "$DATABASE_NAME" -c "$COLLECTION_NAME" --type json --file "$INPUT_JSON"
