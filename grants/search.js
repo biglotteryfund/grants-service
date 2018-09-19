@@ -1,4 +1,5 @@
 'use strict';
+const { concat, head } = require('lodash');
 const request = require('request-promise-native');
 
 async function lookupPostcode(postcode) {
@@ -79,77 +80,8 @@ async function buildMatchCriteria(queryParams) {
     return match;
 }
 
-function buildFacetsCriteria() {
-    return {
-        amountAwarded: [
-            {
-                $bucket: {
-                    groupBy: '$amountAwarded',
-                    boundaries: [0, 10000, 100000, 1000000, Infinity],
-                    output: {
-                        count: { $sum: 1 }
-                    }
-                }
-            }
-        ],
-        awardDate: [
-            {
-                $group: {
-                    _id: {
-                        $year: '$awardDate'
-                    },
-                    count: { $sum: 1 }
-                }
-            }
-        ],
-        grantProgramme: [
-            {
-                $group: {
-                    _id: { $arrayElemAt: ['$grantProgramme.title', 0] },
-                    count: { $sum: 1 }
-                }
-            },
-            { $sort: { _id: 1 } }
-        ],
-        orgType: [
-            {
-                $group: {
-                    _id: {
-                        $arrayElemAt: [
-                            '$recipientOrganization.organisationType',
-                            0
-                        ]
-                    },
-                    count: { $sum: 1 }
-                }
-            },
-            { $sort: { _id: 1 } }
-        ]
-    };
-}
-
-function buildPagination(queryParams, totalResults) {
-    const perPageCount =
-        (queryParams.limit && parseInt(queryParams.limit)) || 50;
-    const pageParam = queryParams.page && parseInt(queryParams.page);
-    const currentPage = pageParam > 1 ? pageParam : 1;
-    const skipCount = perPageCount * (currentPage - 1);
-    const totalPages = Math.ceil(totalResults / perPageCount);
-
-    return { currentPage, perPageCount, skipCount, totalPages };
-}
-
-async function fetchGrants(collection, queryParams) {
+async function buildAggregationPipeline(queryParams, perPage, skipCount) {
     const matchCriteria = await buildMatchCriteria(queryParams);
-    const facetsCriteria = buildFacetsCriteria();
-
-    const totalResults = await collection.find(matchCriteria).count();
-
-    const pagination = buildPagination(queryParams, totalResults);
-
-    const facets = await collection
-        .aggregate([{ $match: matchCriteria }, { $facet: facetsCriteria }])
-        .toArray();
 
     let aggregationPipeline = [
         {
@@ -163,28 +95,114 @@ async function fetchGrants(collection, queryParams) {
     ];
 
     if (queryParams.q) {
-        aggregationPipeline.push({
-            $sort: {
-                score: {
-                    $meta: 'textScore'
+        aggregationPipeline = concat(aggregationPipeline, [
+            {
+                $sort: {
+                    score: {
+                        $meta: 'textScore'
+                    }
                 }
+            },
+            {
+                $addFields: {
+                    _textScore: { $meta: 'textScore' }
+                }
+            },
+            {
+                $match: { _textScore: { $gt: 1.0 } }
             }
-        });
+        ]);
     }
 
-    const results = await collection
-        .aggregate(aggregationPipeline)
-        .skip(pagination.skipCount)
-        .limit(pagination.perPageCount)
-        .toArray();
+    aggregationPipeline = concat(aggregationPipeline, [
+        {
+            $facet: {
+                totalResults: [
+                    {
+                        $count: 'count'
+                    }
+                ],
+                amountAwarded: [
+                    {
+                        $bucket: {
+                            groupBy: '$amountAwarded',
+                            boundaries: [0, 10000, 100000, 1000000, Infinity],
+                            output: {
+                                count: { $sum: 1 }
+                            }
+                        }
+                    }
+                ],
+                awardDate: [
+                    {
+                        $group: {
+                            _id: {
+                                $year: '$awardDate'
+                            },
+                            count: { $sum: 1 }
+                        }
+                    }
+                ],
+                grantProgramme: [
+                    {
+                        $group: {
+                            _id: { $arrayElemAt: ['$grantProgramme.title', 0] },
+                            count: { $sum: 1 }
+                        }
+                    },
+                    { $sort: { _id: 1 } }
+                ],
+                orgType: [
+                    {
+                        $group: {
+                            _id: {
+                                $arrayElemAt: [
+                                    '$recipientOrganization.organisationType',
+                                    0
+                                ]
+                            },
+                            count: { $sum: 1 }
+                        }
+                    },
+                    { $sort: { _id: 1 } }
+                ],
+                paginatedResults: [{ $skip: skipCount }, { $limit: perPage }]
+            }
+        }
+    ]);
+
+    return aggregationPipeline;
+}
+
+async function fetchGrants(collection, queryParams) {
+    const perPageCount = (queryParams.limit && parseInt(queryParams.limit)) || 50;
+    const pageParam = queryParams.page && parseInt(queryParams.page);
+    const currentPage = pageParam > 1 ? pageParam : 1;
+    const skipCount = perPageCount * (currentPage - 1);
+
+    const pipeline = await buildAggregationPipeline(
+        queryParams,
+        perPageCount,
+        skipCount
+    );
+    const result = await collection.aggregate(pipeline).toArray();
+
+    const { totalResults, paginatedResults, ...facets } = head(result);
+
+    const totalResultsValue = head(totalResults).count;
 
     return {
-        results,
-        facets,
         meta: {
-            totalResults,
-            pagination
-        }
+            totalResults: totalResultsValue,
+            pagination: {
+                currentPage: currentPage,
+                perPageCount: perPageCount,
+                skipCount: skipCount,
+                totalPages: Math.ceil(totalResultsValue / perPageCount)
+            }
+        },
+        facets: facets,
+        results: paginatedResults
     };
 }
 
