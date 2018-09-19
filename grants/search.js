@@ -40,6 +40,15 @@ async function buildMatchCriteria(queryParams) {
         });
     }
 
+    if (queryParams.year) {
+        var start = new Date(queryParams.year, 0, 1);
+        var end = new Date(queryParams.year, 11, 31);
+
+        match.$and.push({
+            awardDate: { $gte: start, $lt: end }
+        });
+    }
+
     if (queryParams.postcode) {
         try {
             const postcodeData = await lookupPostcode(queryParams.postcode);
