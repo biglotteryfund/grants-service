@@ -216,7 +216,7 @@ async function fetchGrants(collection, queryParams) {
      * e.g. totalResults: [{ count: 123456 }]
      * so we need to pluck out the single value
      */
-    const totalResultsValue = head(totalResults).count;
+    const totalResultsValue = totalResults.length > 0 ? head(totalResults).count : 0;
 
     return {
         meta: {
