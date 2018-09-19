@@ -19,11 +19,14 @@ const parseDates = data => {
     const dateFields = [
         'Award Date',
         'Planned Dates:Start Date',
-        'Planned Dates:End Date'
+        'Planned Dates:End Date',
+        'Last modified'
     ];
     dateFields.forEach(dateField => {
         if (data[dateField]) {
-            let d = moment(data[dateField].trim(), 'YYYY-MM-DD');
+            // We can't specify a format here because the source data uses different formats
+            // eg. older data is 2004-04-16 and some of it uses 8/17/15
+            let d = moment(data[dateField].trim());
             data[dateField] = {
                 $date: d.toDate()
             };

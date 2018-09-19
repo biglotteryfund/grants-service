@@ -87,7 +87,7 @@ function buildFacetsCriteria() {
             {
                 $group: {
                     _id: {
-                        $year: { $dateFromString: { dateString: '$awardDate' } }
+                        $year: '$awardDate'
                     },
                     count: { $sum: 1 }
                 }
