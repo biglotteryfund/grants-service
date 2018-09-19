@@ -80,28 +80,18 @@ async function buildMatchCriteria(queryParams) {
     return match;
 }
 
-
 async function fetchGrants(collection, queryParams) {
-    const perPageCount = (queryParams.limit && parseInt(queryParams.limit)) || 50;
+    const perPageCount =
+        (queryParams.limit && parseInt(queryParams.limit)) || 50;
     const pageParam = queryParams.page && parseInt(queryParams.page);
     const currentPage = pageParam > 1 ? pageParam : 1;
     const skipCount = perPageCount * (currentPage - 1);
-
 
     /**
      * Construct the aggregation pipeline
      */
     const matchCriteria = await buildMatchCriteria(queryParams);
-    let pipeline = [
-        {
-            $match: matchCriteria
-        },
-        {
-            $project: {
-                _id: 0
-            }
-        }
-    ];
+    const pipeline = [{ $match: matchCriteria }];
 
     /**
      * If we are performing a text query search
@@ -110,113 +100,126 @@ async function fetchGrants(collection, queryParams) {
      * 3. Add a private _textScore field to results for debugging
      */
     if (queryParams.q) {
-        pipeline = concat(pipeline, [
-            {
-                $sort: {
-                    score: {
-                        $meta: 'textScore'
-                    }
+        pipeline.push({
+            $sort: {
+                score: {
+                    $meta: 'textScore'
                 }
-            },
-            {
-                $addFields: {
-                    _textScore: { $meta: 'textScore' }
-                }
-            },
-            {
-                $match: { _textScore: { $gt: 1.0 } }
             }
-        ]);
+        });
+
+        pipeline.push({
+            $addFields: {
+                _textScore: { $meta: 'textScore' }
+            }
+        });
+
+        pipeline.push({
+            $match: { _textScore: { $gt: 1.0 } }
+        });
     }
 
-    pipeline = concat(pipeline, [
-        {
-            $facet: {
-                /**
-                 * Compute the total number of results
-                 */
-                totalResults: [
-                    {
-                        $count: 'count'
+    const grantsResult = await collection
+        .aggregate(
+            concat(pipeline, [
+                {
+                    $project: {
+                        _id: 0
                     }
-                ],
+                }
+            ])
+        )
+        .skip(skipCount)
+        .limit(perPageCount)
+        .toArray();
 
-                /**
-                 * Paginated results object
-                 * (This is the main list of grants)
-                 */
-                paginatedResults: [
-                    { $skip: skipCount },
-                    { $limit: perPageCount }
-                ],
-
-                /**
-                 * Facet fitlers
-                 * All other properties here are used to construct our filters
-                 */
-                amountAwarded: [
-                    {
-                        $bucket: {
-                            groupBy: '$amountAwarded',
-                            boundaries: [0, 10000, 100000, 1000000, Infinity],
-                            output: {
-                                count: { $sum: 1 }
+    const facetResult = await collection
+        .aggregate(
+            concat(pipeline, [
+                {
+                    $facet: {
+                        totalResults: [
+                            {
+                                $count: 'count'
                             }
-                        }
-                    }
-                ],
-                awardDate: [
-                    {
-                        $group: {
-                            _id: {
-                                $year: '$awardDate'
-                            },
-                            count: { $sum: 1 }
-                        }
-                    }
-                ],
-                grantProgramme: [
-                    {
-                        $group: {
-                            _id: { $arrayElemAt: ['$grantProgramme.title', 0] },
-                            count: { $sum: 1 }
-                        }
-                    },
-                    { $sort: { _id: 1 } }
-                ],
-                orgType: [
-                    {
-                        $group: {
-                            _id: {
-                                $arrayElemAt: [
-                                    '$recipientOrganization.organisationType',
-                                    0
-                                ]
-                            },
-                            count: { $sum: 1 }
-                        }
-                    },
-                    { $sort: { _id: 1 } }
-                ]
-            }
-        }
-    ]);
+                        ],
+                        amountAwarded: [
+                            {
+                                $bucket: {
+                                    groupBy: '$amountAwarded',
+                                    boundaries: [
+                                        0,
+                                        10000,
+                                        100000,
+                                        1000000,
+                                        Infinity
+                                    ],
+                                    output: {
+                                        count: { $sum: 1 }
+                                    }
+                                }
+                            }
+                        ],
+                        awardDate: [
+                            {
+                                $group: {
+                                    _id: {
+                                        $year: '$awardDate'
+                                    },
+                                    count: { $sum: 1 }
+                                }
+                            }
+                        ],
 
-    const result = await collection.aggregate(pipeline).toArray();
+                        grantProgramme: [
+                            {
+                                $group: {
+                                    _id: {
+                                        $arrayElemAt: [
+                                            '$grantProgramme.title',
+                                            0
+                                        ]
+                                    },
+                                    count: { $sum: 1 }
+                                }
+                            },
+                            { $sort: { _id: 1 } }
+                        ],
+
+                        orgType: [
+                            {
+                                $group: {
+                                    _id: {
+                                        $arrayElemAt: [
+                                            '$recipientOrganization.organisationType',
+                                            0
+                                        ]
+                                    },
+                                    count: { $sum: 1 }
+                                }
+                            },
+                            { $sort: { _id: 1 } }
+                        ]
+                    }
+                }
+            ])
+        )
+        .toArray();
 
     /**
      * Normalise our results object
      * Extract special case properties: totalResults and paginatedResults,
      * all other properties are facet filter objects
      */
-    const { totalResults, paginatedResults, ...facets } = head(result);
+    const { totalResults, ...facets } = head(facetResult);
 
     /**
      * All $facet results are returned as arrays
      * e.g. totalResults: [{ count: 123456 }]
      * so we need to pluck out the single value
      */
-    const totalResultsValue = totalResults.length > 0 ? head(totalResults).count : 0;
+    const totalResultsValue =
+        totalResults.length > 0 ? head(totalResults).count : 0;
 
     return {
         meta: {
@@ -229,7 +232,7 @@ async function fetchGrants(collection, queryParams) {
             }
         },
         facets: facets,
-        results: paginatedResults
+        results: grantsResult
     };
 }
 
