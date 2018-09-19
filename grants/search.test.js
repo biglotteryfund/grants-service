@@ -35,7 +35,7 @@ describe('Past Grants Search', () => {
         const grants = await queryGrants({
             q: 'youth'
         });
-        expect(grants.results.length).toBe(5);
+        expect(grants.results.length).toBe(1);
     });
 
     it('should find grants by programme', async () => {
@@ -70,12 +70,13 @@ describe('Past Grants Search', () => {
     });
 
     it('should return empty results for invalid queries', async () => {
-        const grants = await queryGrants({
+        const result = await queryGrants({
             orgType: 'MadeUpOrg',
             q: 'purple monkey dishwasher',
             programme: 'Big Cheese Fund',
             postcode: 'N1 9GU'
         });
-        expect(grants.results.length).toBe(0);
+
+        expect(result).toMatchSnapshot();
     });
 });
