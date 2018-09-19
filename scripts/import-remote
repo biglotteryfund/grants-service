@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+HOSTNAMES=$1
+BACKUP_DIR=$2
+
+if [ -z "$1" ]
+  then
+    echo "First argument should be a list of hostnames, eg."
+    echo "foo-shard-0/dbname-shard-00-00-host.net:port,dbname-shard-00-01-host.net:port,dbname-shard-00-02-host.net:port"
+    exit 1
+fi
+
+if [ -z "$2" ]
+  then
+    echo "Second argument should be a path to a backup directory"
+    exit 1
+fi
+
+mongorestore --host "$HOSTNAMES" --ssl --sslAllowInvalidHostnames --username biglotteryfund --authenticationDatabase admin "$BACKUP_DIR"
