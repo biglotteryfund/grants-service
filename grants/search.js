@@ -80,10 +80,19 @@ async function buildMatchCriteria(queryParams) {
     return match;
 }
 
-async function buildAggregationPipeline(queryParams, perPage, skipCount) {
-    const matchCriteria = await buildMatchCriteria(queryParams);
 
-    let aggregationPipeline = [
+async function fetchGrants(collection, queryParams) {
+    const perPageCount = (queryParams.limit && parseInt(queryParams.limit)) || 50;
+    const pageParam = queryParams.page && parseInt(queryParams.page);
+    const currentPage = pageParam > 1 ? pageParam : 1;
+    const skipCount = perPageCount * (currentPage - 1);
+
+
+    /**
+     * Construct the aggregation pipeline
+     */
+    const matchCriteria = await buildMatchCriteria(queryParams);
+    let pipeline = [
         {
             $match: matchCriteria
         },
@@ -94,8 +103,14 @@ async function buildAggregationPipeline(queryParams, perPage, skipCount) {
         }
     ];
 
+    /**
+     * If we are performing a text query search
+     * 1. Sort results by the mongo textScore
+     * 2. Only match results with a minimum text score
+     * 3. Add a private _textScore field to results for debugging
+     */
     if (queryParams.q) {
-        aggregationPipeline = concat(aggregationPipeline, [
+        pipeline = concat(pipeline, [
             {
                 $sort: {
                     score: {
@@ -114,14 +129,31 @@ async function buildAggregationPipeline(queryParams, perPage, skipCount) {
         ]);
     }
 
-    aggregationPipeline = concat(aggregationPipeline, [
+    pipeline = concat(pipeline, [
         {
             $facet: {
+                /**
+                 * Compute the total number of results
+                 */
                 totalResults: [
                     {
                         $count: 'count'
                     }
                 ],
+
+                /**
+                 * Paginated results object
+                 * (This is the main list of grants)
+                 */
+                paginatedResults: [
+                    { $skip: skipCount },
+                    { $limit: perPageCount }
+                ],
+
+                /**
+                 * Facet fitlers
+                 * All other properties here are used to construct our filters
+                 */
                 amountAwarded: [
                     {
                         $bucket: {
@@ -165,30 +197,25 @@ async function buildAggregationPipeline(queryParams, perPage, skipCount) {
                         }
                     },
                     { $sort: { _id: 1 } }
-                ],
-                paginatedResults: [{ $skip: skipCount }, { $limit: perPage }]
+                ]
             }
         }
     ]);
 
-    return aggregationPipeline;
-}
-
-async function fetchGrants(collection, queryParams) {
-    const perPageCount = (queryParams.limit && parseInt(queryParams.limit)) || 50;
-    const pageParam = queryParams.page && parseInt(queryParams.page);
-    const currentPage = pageParam > 1 ? pageParam : 1;
-    const skipCount = perPageCount * (currentPage - 1);
-
-    const pipeline = await buildAggregationPipeline(
-        queryParams,
-        perPageCount,
-        skipCount
-    );
     const result = await collection.aggregate(pipeline).toArray();
 
+    /**
+     * Normalise our results object
+     * Extract special case properties: totalResults and paginatedResults,
+     * all other properties are facet filter objects
+     */
     const { totalResults, paginatedResults, ...facets } = head(result);
 
+    /**
+     * All $facet results are returned as arrays
+     * e.g. totalResults: [{ count: 123456 }]
+     * so we need to pluck out the single value
+     */
     const totalResultsValue = head(totalResults).count;
 
     return {
