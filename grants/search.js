@@ -115,7 +115,7 @@ async function fetchGrants(collection, queryParams) {
         });
 
         pipeline.push({
-            $match: { _textScore: { $gt: 1.0 } }
+            $match: { _textScore: { $gt: 0.5 } }
         });
     }
 
