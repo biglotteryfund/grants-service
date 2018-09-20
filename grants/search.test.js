@@ -35,7 +35,7 @@ describe('Past Grants Search', () => {
         const grants = await queryGrants({
             q: 'youth'
         });
-        expect(grants.results.length).toBe(1);
+        expect(grants.results.length).toBe(5);
     });
 
     it('should find grants by programme', async () => {
