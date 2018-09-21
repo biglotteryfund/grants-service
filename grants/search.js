@@ -131,9 +131,7 @@ async function fetchGrants(collection, queryParams) {
 
     const validSortKeys = [
         'awardDate',
-        'amountAwarded',
-        'title',
-        'grantProgramme.title'
+        'amountAwarded'
     ];
     if (queryParams.sort && validSortKeys.indexOf(queryParams.sort) !== -1) {
         const sortConf = {};
