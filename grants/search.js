@@ -129,6 +129,22 @@ async function fetchGrants(collection, queryParams) {
         ]);
     }
 
+    const validSortKeys = [
+        'awardDate',
+        'amountAwarded',
+        'title',
+        'grantProgramme.title'
+    ];
+    if (queryParams.sort && validSortKeys.indexOf(queryParams.sort) !== -1) {
+        const sortConf = {};
+        sortConf[queryParams.sort] = (queryParams.dir && queryParams.dir === 'desc') ? -1 : 1;
+        pipeline = concat(pipeline, [
+            {
+                $sort: sortConf
+            }
+        ]);
+    }
+
     pipeline = concat(pipeline, [
         {
             $facet: {
