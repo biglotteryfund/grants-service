@@ -128,7 +128,7 @@ async function fetchGrants(collection, queryParams) {
                     }
                 }
             ])
-        )
+        , { allowDiskUse: true })
         .skip(skipCount)
         .limit(perPageCount)
         .toArray();
