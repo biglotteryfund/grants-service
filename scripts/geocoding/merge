@@ -1,0 +1,58 @@
+#!/usr/bin/env node
+/* eslint no-console: 0 */
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const parse = require('csv-parse/lib/sync');
+
+const wardFilePath = path.join(__dirname, 'wards.csv');
+const wardLocationFilePath = path.join(__dirname, 'ward-locations.csv');
+
+// Parse the columns we care about from the ward sheet
+// Source: https://data.gov.uk/dataset/7b9300c5-2b8b-481c-b1ca-ec086132ff89/ward-to-westminster-parliamentary-constituency-to-local-authority-district-december-2016-lookup-in-the-united-kingdom
+const wardCsv = fs.readFileSync(wardFilePath, 'utf-8');
+const wardMap = parse(wardCsv, {
+    columns: [
+        'wardCode',
+        'wardName',
+        'constituencyCode',
+        'constituencyName',
+        'localAuthorityCode',
+        'localAuthorityName',
+        false
+    ]
+});
+
+// Parse the columns we care about from the locations sheet
+// Source: https://geoportal.statistics.gov.uk/datasets/wards-may-2018-uk-bfe
+const wardLocationCsv = fs.readFileSync(wardLocationFilePath, 'utf-8');
+const wardLocationMap = parse(wardLocationCsv, {
+    columns: [
+        false,
+        'wardCode',
+        false,
+        false,
+        false,
+        false,
+        'long',
+        'lat',
+        false,
+        false
+    ]
+});
+
+// Combine the two CSV files by ward code
+let merged = wardMap.map(ward => {
+    let wardLocation = wardLocationMap.find(c => c.wardCode === ward.wardCode);
+    if (wardLocation) {
+        ward.wardLocation = {
+            long: wardLocation.long,
+            lat: wardLocation.lat
+        };
+    }
+    return ward;
+});
+
+// Output the merged JSON to a file
+fs.writeFileSync(path.join(__dirname, 'ward-locations.json'), JSON.stringify(merged));
+console.log('Merged data has been written');

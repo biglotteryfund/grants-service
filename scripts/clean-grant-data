@@ -6,7 +6,7 @@ const moment = require('moment');
 const _ = require('lodash');
 const split = require('split');
 
-const wardLocations = require('./ward-locations');
+const wardLocations = require('./geocoding/ward-locations');
 
 const argv = require('yargs')
     .alias('f', 'file')
