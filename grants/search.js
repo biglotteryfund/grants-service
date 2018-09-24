@@ -57,7 +57,11 @@ async function buildMatchCriteria(queryParams) {
                 match.$or = match.$or.concat([
                     {
                         'beneficiaryLocation.geoCode': {
-                            $eq: postcodeData.result.codes.admin_district
+                            $in: [
+                                postcodeData.result.codes.admin_district,
+                                postcodeData.result.codes.admin_ward,
+                                postcodeData.result.codes.parliamentary_constituency,
+                            ]
                         }
                     }
                 ]);

@@ -6,6 +6,8 @@ const moment = require('moment');
 const _ = require('lodash');
 const split = require('split');
 
+const wardLocations = require('./ward-locations');
+
 const argv = require('yargs')
     .alias('f', 'file')
     .describe('f', 'The path to a JSON file to clean')
@@ -112,6 +114,34 @@ const rename = data => {
 
 };
 
+const addLocations = data => {
+    // Find the first location (eg. ward)
+    const wardCode = data.beneficiaryLocation[0].geoCode || false;
+    const match = wardLocations.find(m => m.wardCode === wardCode);
+
+    if (match) {
+        // Add the constituency location
+        data.beneficiaryLocation.push({
+            name: match.constituencyName,
+            geoCode: match.constituencyCode,
+            geoCodeType: 'WPC'
+        });
+
+        // If we have lat/lngs for this ward, add them too
+        if (match.location) {
+            data.beneficiaryLocation[0].location = {
+                type: "Point",
+                coordinates: [
+                    parseFloat(match.location.long),
+                    parseFloat(match.location.lat)
+                ]
+            }
+        }
+    }
+
+    return data;
+};
+
 const outputFileStream = fs.createWriteStream(argv.o, { flags:'a' });
 
 const getStream = function () {
@@ -125,7 +155,9 @@ getStream().pipe(es.mapSync((data) => {
     let cleaned = [data]
         .map(parseDates)
         .map(separateOrgType)
-        .map(rename);
+        .map(rename)
+        .map(addLocations);
+
     outputFileStream.write(JSON.stringify(cleaned[0], null, 4) + '\n');
 }).on('error', function (err) {
     console.log('Error parsing JSON', err);
