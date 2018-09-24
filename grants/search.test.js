@@ -20,7 +20,9 @@ describe('Past Grants Search', () => {
         await grantsCollection.insertMany(mockGrantData.results);
 
         // add the indices
-        grantsCollection.createIndex(INDICES.spec, INDICES.options);
+        INDICES.forEach(i => {
+            grantsCollection.createIndex(i.spec, i.options);
+        });
     });
 
     afterAll(async () => {
