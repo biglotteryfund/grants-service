@@ -123,6 +123,17 @@ async function fetchGrants(collection, queryParams) {
         });
     }
 
+    const validSortKeys = ['awardDate', 'amountAwarded'];
+    if (queryParams.sort && validSortKeys.indexOf(queryParams.sort) !== -1) {
+        const sortConf = {};
+        sortConf[queryParams.sort] = (queryParams.dir && queryParams.dir === 'desc') ? -1 : 1;
+        pipeline.push(
+            {
+                $sort: sortConf
+            }
+        );
+    }
+
     const grantsResult = await collection
         .aggregate(
             concat(pipeline, [
@@ -132,7 +143,7 @@ async function fetchGrants(collection, queryParams) {
                     }
                 }
             ])
-        )
+        , { allowDiskUse: true })
         .skip(skipCount)
         .limit(perPageCount)
         .toArray();

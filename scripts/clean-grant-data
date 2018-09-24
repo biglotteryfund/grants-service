@@ -55,18 +55,21 @@ const separateOrgType = data => {
 // Rename the fields to something more useful and drop unused fields
 // http://standard.threesixtygiving.org/en/latest/_static/docson/index.html#../360-giving-schema.json
 const rename = data => {
-    let newData = {
+
+    const plannedDates = { startDate: data['Planned Dates:Start Date'] };
+
+    if (data['Planned Dates:End Date']) {
+        plannedDates.endDate = data['Planned Dates:End Date'];
+    }
+
+    const newData = {
         id: data['Identifier'],
         title: data['Title'],
         description: data['Description'],
         currency: data['Currency'],
         amountAwarded: parseInt(data['Amount Awarded'], 10),
         awardDate: data['Award Date'],
-        plannedDates: [
-            {
-                startDate: data['Planned Dates:Start Date'],
-            }
-        ],
+        plannedDates: [plannedDates],
         recipientOrganization: [
             {
                 id: data['Recipient Org:Identifier'],
@@ -102,12 +105,6 @@ const rename = data => {
         ],
         dateModified: data['Last modified']
     };
-
-    if (data['Planned Dates:End Date']) {
-        newData.plannedDates.push({
-            endDate: data['Planned Dates:End Date'],
-        });
-    }
 
     // Strip out null / undefined
     return _.pickBy(newData, _.identity);
