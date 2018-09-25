@@ -1,5 +1,4 @@
 'use strict';
-const { concat, head } = require('lodash');
 const request = require('request-promise-native');
 
 async function lookupPostcode(postcode) {
