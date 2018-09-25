@@ -5,8 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const parse = require('csv-parse/lib/sync');
 
-const wardFilePath = path.join(__dirname, 'wards.csv');
-const wardLocationFilePath = path.join(__dirname, 'ward-locations.csv');
+const wardFilePath = path.join(__dirname, '../data/wards.csv');
+const wardLocationFilePath = path.join(__dirname, '../data/ward-locations.csv');
 
 // Parse the columns we care about from the ward sheet
 // Source: https://data.gov.uk/dataset/7b9300c5-2b8b-481c-b1ca-ec086132ff89/ward-to-westminster-parliamentary-constituency-to-local-authority-district-december-2016-lookup-in-the-united-kingdom
