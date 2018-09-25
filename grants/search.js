@@ -50,6 +50,13 @@ async function buildMatchCriteria(queryParams) {
         });
     }
 
+    if (queryParams.amount) {
+        const [minAmount, maxAmount] = queryParams.amount.split('|').map(parseInt);
+        match.$and.push({
+            amountAwarded: { $gte: minAmount || 0, $lte: maxAmount || Infinity }
+        });
+    }
+
     if (queryParams.postcode) {
         try {
             const postcodeData = await lookupPostcode(queryParams.postcode);
