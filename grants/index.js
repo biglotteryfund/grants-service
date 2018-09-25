@@ -19,7 +19,10 @@ router.route('/').get(async (req, res) => {
 router.route('/:id').get(async (req, res) => {
     try {
         const { client, collection } = await connectToMongo();
-        const result = await collection.findOne({ id: req.params.id });
+        const result = await collection.findOne({
+            // Re-add 360Giving prefix when querying
+            id: `360G-blf-${req.params.id}`
+        });
         client.close();
         res.send(result);
     } catch (error) {

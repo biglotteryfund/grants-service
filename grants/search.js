@@ -60,7 +60,8 @@ async function buildMatchCriteria(queryParams) {
                             $in: [
                                 postcodeData.result.codes.admin_district,
                                 postcodeData.result.codes.admin_ward,
-                                postcodeData.result.codes.parliamentary_constituency,
+                                postcodeData.result.codes
+                                    .parliamentary_constituency
                             ]
                         }
                     }
@@ -126,24 +127,27 @@ async function fetchGrants(collection, queryParams) {
     const validSortKeys = ['awardDate', 'amountAwarded'];
     if (queryParams.sort && validSortKeys.indexOf(queryParams.sort) !== -1) {
         const sortConf = {};
-        sortConf[queryParams.sort] = (queryParams.dir && queryParams.dir === 'desc') ? -1 : 1;
-        pipeline.push(
-            {
-                $sort: sortConf
-            }
-        );
+        sortConf[queryParams.sort] =
+            queryParams.dir && queryParams.dir === 'desc' ? -1 : 1;
+        pipeline.push({
+            $sort: sortConf
+        });
     }
 
     const grantsResult = await collection
         .aggregate(
             concat(pipeline, [
                 {
-                    $project: {
-                        _id: 0
+                    $addFields: {
+                        id: {
+                            // Strip 360Giving prefix from returned ID
+                            $arrayElemAt: [{ $split: ['$id', '360G-blf-'] }, 1]
+                        }
                     }
                 }
-            ])
-        , { allowDiskUse: true })
+            ]),
+            { allowDiskUse: true }
+        )
         .skip(skipCount)
         .limit(perPageCount)
         .toArray();
