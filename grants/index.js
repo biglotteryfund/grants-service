@@ -4,6 +4,7 @@ const router = express.Router();
 
 const { connectToMongo } = require('../lib/mongo');
 const { fetchGrants } = require('./search');
+const cachedFacets = require('../data/facets');
 
 router.route('/').get(async (req, res) => {
     try {
@@ -15,6 +16,10 @@ router.route('/').get(async (req, res) => {
     } catch (error) {
         res.send(error);
     }
+});
+
+router.route('/facets').get((req, res) => {
+    res.send(cachedFacets)
 });
 
 module.exports = router;

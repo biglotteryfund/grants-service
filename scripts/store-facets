@@ -1,0 +1,19 @@
+#!/usr/bin/env node
+'use strict';
+
+const request = require('request-promise-native');
+const fs = require('fs');
+const path = require('path');
+
+request({
+    method: 'GET',
+    url: `http://localhost:8888/past-grants-search`,
+    headers: {
+        'Content-Type': 'application/json'
+    }
+}).then(response => {
+    let json = JSON.parse(response);
+    fs.writeFileSync(path.join(__dirname, '../data/facets.json'), JSON.stringify(json.facets, null, 4));
+    console.log(json.facets);
+    console.log('The above facets were written to disk. Please commit these changes.');
+});
