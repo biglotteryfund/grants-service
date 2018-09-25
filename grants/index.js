@@ -10,8 +10,18 @@ router.route('/').get(async (req, res) => {
         const { client, collection } = await connectToMongo();
         const results = await fetchGrants(collection, req.query);
         client.close();
-        res.setHeader('cache-control', 'max-age=10,s-maxage=300');
         res.send(results);
+    } catch (error) {
+        res.send(error);
+    }
+});
+
+router.route('/:id').get(async (req, res) => {
+    try {
+        const { client, collection } = await connectToMongo();
+        const result = await collection.findOne({ id: req.params.id });
+        client.close();
+        res.send(result);
     } catch (error) {
         res.send(error);
     }
