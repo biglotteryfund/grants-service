@@ -1,5 +1,6 @@
 'use strict';
 const request = require('request-promise-native');
+const { head } = require('lodash');
 
 async function lookupPostcode(postcode) {
     return request({
@@ -227,7 +228,7 @@ async function fetchGrants(collection, queryParams) {
                 totalPages: Math.ceil(totalResults / perPageCount)
             }
         },
-        facets: facets,
+        facets: head(facets),
         results: grantsResult
     };
 }
