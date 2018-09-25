@@ -2,6 +2,8 @@
 const request = require('request-promise-native');
 const { head } = require('lodash');
 
+const ID_PREFIX = '360G-blf-';
+
 async function lookupPostcode(postcode) {
     return request({
         method: 'GET',
@@ -53,7 +55,7 @@ async function buildMatchCriteria(queryParams) {
     if (queryParams.amount) {
         const [minAmount, maxAmount] = queryParams.amount
             .split('|')
-            .map(parseInt);
+            .map(num => parseInt(num, 10));
         match.$and.push({
             amountAwarded: { $gte: minAmount || 0, $lte: maxAmount || Infinity }
         });
@@ -167,7 +169,7 @@ async function fetchGrants(collection, queryParams) {
             $addFields: {
                 id: {
                     // Strip 360Giving prefix from returned ID
-                    $arrayElemAt: [{ $split: ['$id', '360G-blf-'] }, 1]
+                    $arrayElemAt: [{ $split: ['$id', ID_PREFIX] }, 1]
                 }
             }
         }
@@ -234,5 +236,6 @@ async function fetchGrants(collection, queryParams) {
 }
 
 module.exports = {
+    ID_PREFIX,
     fetchGrants
 };

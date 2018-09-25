@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 const { connectToMongo } = require('../lib/mongo');
-const { fetchGrants } = require('./search');
+const { ID_PREFIX, fetchGrants } = require('./search');
 
 router.route('/').get(async (req, res) => {
     try {
@@ -19,10 +19,11 @@ router.route('/').get(async (req, res) => {
 router.route('/:id').get(async (req, res) => {
     try {
         const { client, collection } = await connectToMongo();
+
         const result = await collection.findOne({
-            // Re-add 360Giving prefix when querying
-            id: `360G-blf-${req.params.id}`
+            id: `${ID_PREFIX}${req.params.id}`
         });
+
         client.close();
         res.send(result);
     } catch (error) {
