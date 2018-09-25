@@ -1,6 +1,8 @@
 'use strict';
-const { concat, head } = require('lodash');
 const request = require('request-promise-native');
+const { head } = require('lodash');
+
+const ID_PREFIX = '360G-blf-';
 
 async function lookupPostcode(postcode) {
     return request({
@@ -50,6 +52,15 @@ async function buildMatchCriteria(queryParams) {
         });
     }
 
+    if (queryParams.amount) {
+        const [minAmount, maxAmount] = queryParams.amount
+            .split('|')
+            .map(num => parseInt(num, 10));
+        match.$and.push({
+            amountAwarded: { $gte: minAmount || 0, $lte: maxAmount || Infinity }
+        });
+    }
+
     if (queryParams.postcode) {
         try {
             const postcodeData = await lookupPostcode(queryParams.postcode);
@@ -60,7 +71,8 @@ async function buildMatchCriteria(queryParams) {
                             $in: [
                                 postcodeData.result.codes.admin_district,
                                 postcodeData.result.codes.admin_ward,
-                                postcodeData.result.codes.parliamentary_constituency,
+                                postcodeData.result.codes
+                                    .parliamentary_constituency
                             ]
                         }
                     }
@@ -84,6 +96,59 @@ async function buildMatchCriteria(queryParams) {
     return match;
 }
 
+function buildFacetCriteria() {
+    return {
+        amountAwarded: [
+            {
+                $bucket: {
+                    groupBy: '$amountAwarded',
+                    boundaries: [0, 10000, 100000, 1000000, Infinity],
+                    output: {
+                        count: { $sum: 1 }
+                    }
+                }
+            }
+        ],
+        awardDate: [
+            {
+                $group: {
+                    _id: {
+                        $year: '$awardDate'
+                    },
+                    count: { $sum: 1 }
+                }
+            }
+        ],
+
+        grantProgramme: [
+            {
+                $group: {
+                    _id: {
+                        $arrayElemAt: ['$grantProgramme.title', 0]
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ],
+
+        orgType: [
+            {
+                $group: {
+                    _id: {
+                        $arrayElemAt: [
+                            '$recipientOrganization.organisationType',
+                            0
+                        ]
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]
+    };
+}
+
 async function fetchGrants(collection, queryParams) {
     const perPageCount =
         (queryParams.limit && parseInt(queryParams.limit)) || 50;
@@ -91,11 +156,24 @@ async function fetchGrants(collection, queryParams) {
     const currentPage = pageParam > 1 ? pageParam : 1;
     const skipCount = perPageCount * (currentPage - 1);
 
+    const matchCriteria = await buildMatchCriteria(queryParams);
+    const facetCriteria = buildFacetCriteria();
+
     /**
      * Construct the aggregation pipeline
      */
-    const matchCriteria = await buildMatchCriteria(queryParams);
-    const pipeline = [{ $match: matchCriteria }];
+    const resultsPipeline = [
+        { $match: matchCriteria },
+        { $sort: { awardDate: -1 } },
+        {
+            $addFields: {
+                id: {
+                    // Strip 360Giving prefix from returned ID
+                    $arrayElemAt: [{ $split: ['$id', ID_PREFIX] }, 1]
+                }
+            }
+        }
+    ];
 
     /**
      * If we are performing a text query search
@@ -104,7 +182,7 @@ async function fetchGrants(collection, queryParams) {
      * 3. Add a private _textScore field to results for debugging
      */
     if (queryParams.q) {
-        pipeline.push({
+        resultsPipeline.push({
             $sort: {
                 score: {
                     $meta: 'textScore'
@@ -112,145 +190,52 @@ async function fetchGrants(collection, queryParams) {
             }
         });
 
-        pipeline.push({
+        resultsPipeline.push({
             $addFields: {
                 _textScore: { $meta: 'textScore' }
             }
         });
-
-        pipeline.push({
-            $match: { _textScore: { $gt: 0.5 } }
-        });
     }
 
-    const validSortKeys = ['awardDate', 'amountAwarded'];
-    if (queryParams.sort && validSortKeys.indexOf(queryParams.sort) !== -1) {
-        const sortConf = {};
-        sortConf[queryParams.sort] = (queryParams.dir && queryParams.dir === 'desc') ? -1 : 1;
-        pipeline.push(
-            {
+    if (queryParams.sort) {
+        const [field, direction] = queryParams.sort.split('|');
+        if (['awardDate', 'amountAwarded'].indexOf(field) !== -1) {
+            const sortConf = {};
+            sortConf[field] = direction === 'asc' ? 1 : -1;
+            resultsPipeline.push({
                 $sort: sortConf
-            }
-        );
+            });
+        }
     }
 
     const grantsResult = await collection
-        .aggregate(
-            concat(pipeline, [
-                {
-                    $project: {
-                        _id: 0
-                    }
-                }
-            ])
-        , { allowDiskUse: true })
+        .aggregate(resultsPipeline, { allowDiskUse: true })
         .skip(skipCount)
         .limit(perPageCount)
         .toArray();
 
-    const facetResult = await collection
-        .aggregate(
-            concat(pipeline, [
-                {
-                    $facet: {
-                        totalResults: [
-                            {
-                                $count: 'count'
-                            }
-                        ],
-                        amountAwarded: [
-                            {
-                                $bucket: {
-                                    groupBy: '$amountAwarded',
-                                    boundaries: [
-                                        0,
-                                        10000,
-                                        100000,
-                                        1000000,
-                                        Infinity
-                                    ],
-                                    output: {
-                                        count: { $sum: 1 }
-                                    }
-                                }
-                            }
-                        ],
-                        awardDate: [
-                            {
-                                $group: {
-                                    _id: {
-                                        $year: '$awardDate'
-                                    },
-                                    count: { $sum: 1 }
-                                }
-                            }
-                        ],
-
-                        grantProgramme: [
-                            {
-                                $group: {
-                                    _id: {
-                                        $arrayElemAt: [
-                                            '$grantProgramme.title',
-                                            0
-                                        ]
-                                    },
-                                    count: { $sum: 1 }
-                                }
-                            },
-                            { $sort: { _id: 1 } }
-                        ],
-
-                        orgType: [
-                            {
-                                $group: {
-                                    _id: {
-                                        $arrayElemAt: [
-                                            '$recipientOrganization.organisationType',
-                                            0
-                                        ]
-                                    },
-                                    count: { $sum: 1 }
-                                }
-                            },
-                            { $sort: { _id: 1 } }
-                        ]
-                    }
-                }
-            ])
-        )
+    const facets = await collection
+        .aggregate([{ $match: matchCriteria }, { $facet: facetCriteria }])
         .toArray();
 
-    /**
-     * Normalise our results object
-     * Extract special case properties: totalResults and paginatedResults,
-     * all other properties are facet filter objects
-     */
-    const { totalResults, ...facets } = head(facetResult);
-
-    /**
-     * All $facet results are returned as arrays
-     * e.g. totalResults: [{ count: 123456 }]
-     * so we need to pluck out the single value
-     */
-    const totalResultsValue =
-        totalResults.length > 0 ? head(totalResults).count : 0;
+    const totalResults = await collection.find(matchCriteria).count();
 
     return {
         meta: {
-            totalResults: totalResultsValue,
+            totalResults: totalResults,
             pagination: {
                 currentPage: currentPage,
                 perPageCount: perPageCount,
                 skipCount: skipCount,
-                totalPages: Math.ceil(totalResultsValue / perPageCount)
+                totalPages: Math.ceil(totalResults / perPageCount)
             }
         },
-        facets: facets,
+        facets: head(facets),
         results: grantsResult
     };
 }
 
 module.exports = {
+    ID_PREFIX,
     fetchGrants
 };
