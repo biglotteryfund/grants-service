@@ -9,3 +9,8 @@ if [ -z "$1" ]
 fi
 
 mongodump --db blf --collection grants --out "$BACKUP_DIR"
+
+echo "Dump completed!"
+echo "To upload this export to the remote Mongo instance, use the following command:"
+echo ""
+echo "./scripts/import-remote \"list,of,hostnames\"" $BACKUP_DIR "new-collection-name"
