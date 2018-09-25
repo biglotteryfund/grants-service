@@ -28,7 +28,7 @@ async function buildMatchCriteria(queryParams) {
 
 
     // Handle a directly-entered postcode
-    if (isPostcode(queryParams.q)) {
+    if (queryParams.q && isPostcode(queryParams.q)) {
         queryParams.postcode = queryParams.q;
         delete queryParams.q;
     }
