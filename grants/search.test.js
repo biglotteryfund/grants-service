@@ -2,7 +2,7 @@
 'use strict';
 const { MongoClient } = require('mongodb');
 const mockGrantData = require('../test/fixtures/grants');
-const { INDICES } = require('../lib/mongo');
+const indices = require('../lib/indices');
 
 const { fetchGrants } = require('./search');
 
@@ -20,7 +20,7 @@ describe('Past Grants Search', () => {
         await grantsCollection.insertMany(mockGrantData.results);
 
         // add the indices
-        INDICES.forEach(i => {
+        indices.forEach(i => {
             grantsCollection.createIndex(i.spec, i.options);
         });
     });
