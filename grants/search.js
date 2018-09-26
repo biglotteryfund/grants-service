@@ -4,6 +4,12 @@ const { head } = require('lodash');
 
 const ID_PREFIX = '360G-blf-';
 
+const isPostcode = input => {
+    // Via https://github.com/chriso/validator.js/blob/master/lib/isPostalCode.js#L54
+    const POSTCODE_PATTERN = /(gir\s?0aa|[a-zA-Z]{1,2}\d[\da-zA-Z]?\s?(\d[a-zA-Z]{2})?)/;
+    return !!input.match(POSTCODE_PATTERN);
+};
+
 async function lookupPostcode(postcode) {
     return request({
         method: 'GET',
@@ -20,7 +26,14 @@ async function buildMatchCriteria(queryParams) {
     match.$and = [];
     match.$or = [];
 
-    if (queryParams.q) {
+
+    // Handle a directly-entered postcode
+    if (queryParams.q && isPostcode(queryParams.q)) {
+        queryParams.postcode = queryParams.q;
+        delete queryParams.q;
+    }
+
+    if (queryParams.q && !isPostcode(queryParams.q)) {
         match.$text = {
             $search: queryParams.q
         };
