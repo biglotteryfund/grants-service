@@ -111,6 +111,16 @@ const rename = data => {
 
 };
 
+const fixStupidTypo = data => {
+    const wrong = 'This is a programme for individual veterans as opposed to organisaitons';
+    const right = 'This is a programme for individual veterans as opposed to organisations';
+    data.recipientOrganization = data.recipientOrganization.map(org => {
+        org.name = org.name.replace(wrong, right)
+        return org;
+    });
+    return data;
+};
+
 const addLocations = data => {
     // Find the first location (eg. ward)
     const wardCode = data.beneficiaryLocation[0].geoCode || false;
@@ -153,6 +163,7 @@ getStream().pipe(es.mapSync((data) => {
         .map(parseDates)
         .map(separateOrgType)
         .map(rename)
+        .map(fixStupidTypo)
         .map(addLocations);
 
     outputFileStream.write(JSON.stringify(cleaned[0], null, 4) + '\n');

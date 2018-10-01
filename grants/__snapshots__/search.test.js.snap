@@ -6,7 +6,9 @@ Object {
     "amountAwarded": Array [],
     "awardDate": Array [],
     "grantProgramme": Array [],
+    "localAuthorities": Array [],
     "orgType": Array [],
+    "westminsterConstituencies": Array [],
   },
   "meta": Object {
     "pagination": Object {
