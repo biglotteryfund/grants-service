@@ -96,6 +96,31 @@ async function buildMatchCriteria(queryParams) {
         }
     }
 
+    if (queryParams.country) {
+        let regex;
+        switch (queryParams.country) {
+            case 'england':
+                regex = /^E/;
+                break;
+            case 'wales':
+                regex = /^W/;
+                break;
+            case 'scotland':
+                regex = /^S/;
+                break;
+            case 'northern-ireland':
+                regex = /^N/;
+                break;
+        }
+        if (regex) {
+            match.$and.push({
+                'beneficiaryLocation.geoCode': { $regex: regex }
+            }, {
+                'beneficiaryLocation.geoCodeType': 'CMLAD'
+            });
+        }
+    }
+
     // $and and $or cannot be empty arrays
 
     if (match.$and.length === 0) {
@@ -109,8 +134,38 @@ async function buildMatchCriteria(queryParams) {
     return match;
 }
 
+function buildLocationFacet(codeType) {
+    return [
+        {
+            $project: {
+                items:  {
+                    $filter: {
+                        input: '$beneficiaryLocation',
+                        as: 'location',
+                        cond: { $eq: ['$$location.geoCodeType', codeType]}
+                    }
+                }
+            }
+        },
+        {
+            $group: {
+                _id: {
+                    $arrayElemAt: [ '$items.name', 0]
+                },
+                code: { $first: { $arrayElemAt: [ '$items.geoCode', 0] } },
+                count: { $sum: 1 },
+            }
+        },
+        { $sort: { _id: 1 } },
+    ]
+}
+
 function buildFacetCriteria() {
     return {
+
+        localAuthorities: buildLocationFacet('CMLAD'),
+        westminsterConstituencies: buildLocationFacet('WPC'),
+
         amountAwarded: [
             {
                 $bucket: {
@@ -122,6 +177,7 @@ function buildFacetCriteria() {
                 }
             }
         ],
+
         awardDate: [
             {
                 $group: {
