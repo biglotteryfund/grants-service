@@ -258,12 +258,14 @@ async function fetchGrants(collection, queryParams) {
     const matchCriteria = await buildMatchCriteria(queryParams);
     const facetCriteria = buildFacetCriteria();
 
+    const sortCritieria = determineSortCriteria(queryParams);
+
     /**
      * Construct the aggregation pipeline
      */
     const resultsPipeline = [
         { $match: matchCriteria },
-        { $sort: determineSortCriteria(queryParams) },
+        { $sort: sortCritieria },
         {
             $addFields: {
                 id: {
@@ -294,10 +296,16 @@ async function fetchGrants(collection, queryParams) {
 
     const totalResults = await collection.find(matchCriteria).count();
 
+    const currentSortType = head(Object.keys(sortCritieria));
+
     return {
         meta: {
             totalResults: totalResults,
             query: queryParams,
+            currentSort: {
+                type: currentSortType,
+                direction: sortCritieria[currentSortType] === 1 ? 'asc' : 'desc'
+            },
             pagination: {
                 currentPage: currentPage,
                 perPageCount: perPageCount,
