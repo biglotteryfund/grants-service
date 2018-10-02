@@ -95,4 +95,11 @@ describe('Past Grants Search', () => {
         });
         expect(result.meta.query.q).toEqual('"led" "zeppelin" -airships');
     });
+
+    it('should not modify already-quoted words when quoting query strings', async () => {
+        const result = await queryGrants({
+            q: '"cause you know sometimes words have two meanings"',
+        });
+        expect(result.meta.query.q).toEqual('"cause you know sometimes words have two meanings"');
+    });
 });

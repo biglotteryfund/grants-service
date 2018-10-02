@@ -34,13 +34,15 @@ async function buildMatchCriteria(queryParams) {
     }
 
     if (queryParams.q && !isPostcode(queryParams.q)) {
-        queryParams.q = queryParams.q.split(' ').map(t => {
-            // Is this a negation? Don't wrap it in quotes
-            if (t[0] === '-') {
-                return t;
-            }
-            return `"${t}"`;
-        }).join(' ');
+        if (queryParams.q.indexOf('"') === -1) {
+            queryParams.q = queryParams.q.split(' ').map(t => {
+                // Is this a negation? Don't wrap it in quotes
+                if (t[0] === '-') {
+                    return t;
+                }
+                return `"${t}"`;
+            }).join(' ');
+        }
 
         match.$text = {
             $search: queryParams.q
