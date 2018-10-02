@@ -81,4 +81,25 @@ describe('Past Grants Search', () => {
 
         expect(result).toMatchSnapshot();
     });
+
+    it('should convert multi-word queries into quoted strings', async () => {
+        const result = await queryGrants({
+            q: 'led zeppelin',
+        });
+        expect(result.meta.query.q).toEqual('"led" "zeppelin"');
+    });
+
+    it('should not modify negated words when quoting query strings', async () => {
+        const result = await queryGrants({
+            q: 'led zeppelin -airships',
+        });
+        expect(result.meta.query.q).toEqual('"led" "zeppelin" -airships');
+    });
+
+    it('should not modify already-quoted words when quoting query strings', async () => {
+        const result = await queryGrants({
+            q: '"cause you know sometimes words have two meanings"',
+        });
+        expect(result.meta.query.q).toEqual('"cause you know sometimes words have two meanings"');
+    });
 });

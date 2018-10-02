@@ -34,6 +34,16 @@ async function buildMatchCriteria(queryParams) {
     }
 
     if (queryParams.q && !isPostcode(queryParams.q)) {
+        if (queryParams.q.indexOf('"') === -1) {
+            queryParams.q = queryParams.q.split(' ').map(t => {
+                // Is this a negation? Don't wrap it in quotes
+                if (t[0] === '-') {
+                    return t;
+                }
+                return `"${t}"`;
+            }).join(' ');
+        }
+
         match.$text = {
             $search: queryParams.q
         };
@@ -292,6 +302,7 @@ async function fetchGrants(collection, queryParams) {
     return {
         meta: {
             totalResults: totalResults,
+            query: queryParams,
             pagination: {
                 currentPage: currentPage,
                 perPageCount: perPageCount,
