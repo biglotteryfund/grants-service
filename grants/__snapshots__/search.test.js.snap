@@ -11,6 +11,10 @@ Object {
     "westminsterConstituencies": Array [],
   },
   "meta": Object {
+    "currentSort": Object {
+      "direction": "desc",
+      "type": "score",
+    },
     "pagination": Object {
       "currentPage": 1,
       "perPageCount": 50,

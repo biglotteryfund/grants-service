@@ -26,7 +26,6 @@ async function buildMatchCriteria(queryParams) {
     match.$and = [];
     match.$or = [];
 
-
     // Handle a directly-entered postcode
     if (queryParams.q && isPostcode(queryParams.q)) {
         queryParams.postcode = queryParams.q;
@@ -174,6 +173,7 @@ function buildFacetCriteria() {
     return {
 
         localAuthorities: buildLocationFacet('CMLAD'),
+
         westminsterConstituencies: buildLocationFacet('WPC'),
 
         amountAwarded: [
@@ -228,6 +228,26 @@ function buildFacetCriteria() {
     };
 }
 
+function determineSortCriteria(queryParams) {
+    let sortConf = { awardDate: -1 };
+    if (queryParams.sort) {
+        const [field, direction] = queryParams.sort.split('|');
+        if (['awardDate', 'amountAwarded'].indexOf(field) !== -1) {
+            const newSortConf = {};
+            newSortConf[field] = direction === 'asc' ? 1 : -1;
+            sortConf = newSortConf;
+        }
+    } else if (queryParams.q) {
+        sortConf = {
+            score: {
+                $meta: 'textScore'
+            }
+        };
+    }
+
+    return sortConf;
+}
+
 async function fetchGrants(collection, queryParams) {
     const perPageCount =
         (queryParams.limit && parseInt(queryParams.limit)) || 50;
@@ -238,12 +258,14 @@ async function fetchGrants(collection, queryParams) {
     const matchCriteria = await buildMatchCriteria(queryParams);
     const facetCriteria = buildFacetCriteria();
 
+    const sortCriteria = determineSortCriteria(queryParams);
+
     /**
      * Construct the aggregation pipeline
      */
     const resultsPipeline = [
         { $match: matchCriteria },
-        { $sort: { awardDate: -1 } },
+        { $sort: sortCriteria },
         {
             $addFields: {
                 id: {
@@ -254,37 +276,12 @@ async function fetchGrants(collection, queryParams) {
         }
     ];
 
-    /**
-     * If we are performing a text query search
-     * 1. Sort results by the mongo textScore
-     * 2. Only match results with a minimum text score
-     * 3. Add a private _textScore field to results for debugging
-     */
     if (queryParams.q) {
-        resultsPipeline.push({
-            $sort: {
-                score: {
-                    $meta: 'textScore'
-                }
-            }
-        });
-
         resultsPipeline.push({
             $addFields: {
                 _textScore: { $meta: 'textScore' }
             }
         });
-    }
-
-    if (queryParams.sort) {
-        const [field, direction] = queryParams.sort.split('|');
-        if (['awardDate', 'amountAwarded'].indexOf(field) !== -1) {
-            const sortConf = {};
-            sortConf[field] = direction === 'asc' ? 1 : -1;
-            resultsPipeline.push({
-                $sort: sortConf
-            });
-        }
     }
 
     const grantsResult = await collection
@@ -299,10 +296,16 @@ async function fetchGrants(collection, queryParams) {
 
     const totalResults = await collection.find(matchCriteria).count();
 
+    const currentSortType = head(Object.keys(sortCriteria));
+
     return {
         meta: {
             totalResults: totalResults,
             query: queryParams,
+            currentSort: {
+                type: currentSortType,
+                direction: sortCriteria[currentSortType] === 1 ? 'asc' : 'desc'
+            },
             pagination: {
                 currentPage: currentPage,
                 perPageCount: perPageCount,
