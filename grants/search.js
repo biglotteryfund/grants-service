@@ -26,7 +26,6 @@ async function buildMatchCriteria(queryParams) {
     match.$and = [];
     match.$or = [];
 
-
     // Handle a directly-entered postcode
     if (queryParams.q && isPostcode(queryParams.q)) {
         queryParams.postcode = queryParams.q;
@@ -174,6 +173,7 @@ function buildFacetCriteria() {
     return {
 
         localAuthorities: buildLocationFacet('CMLAD'),
+
         westminsterConstituencies: buildLocationFacet('WPC'),
 
         amountAwarded: [
@@ -228,6 +228,26 @@ function buildFacetCriteria() {
     };
 }
 
+function determineSortCriteria(queryParams) {
+    let sortConf = { awardDate: -1 };
+    if (queryParams.q) {
+        sortConf = {
+            score: {
+                $meta: 'textScore'
+            }
+        };
+    } else if (queryParams.sort) {
+        const [field, direction] = queryParams.sort.split('|');
+        if (['awardDate', 'amountAwarded'].indexOf(field) !== -1) {
+            const newSortConf = {};
+            newSortConf[field] = direction === 'asc' ? 1 : -1;
+            sortConf = newSortConf;
+        }
+    }
+
+    return sortConf;
+}
+
 async function fetchGrants(collection, queryParams) {
     const perPageCount =
         (queryParams.limit && parseInt(queryParams.limit)) || 50;
@@ -243,7 +263,7 @@ async function fetchGrants(collection, queryParams) {
      */
     const resultsPipeline = [
         { $match: matchCriteria },
-        { $sort: { awardDate: -1 } },
+        { $sort: determineSortCriteria(queryParams) },
         {
             $addFields: {
                 id: {
@@ -254,37 +274,12 @@ async function fetchGrants(collection, queryParams) {
         }
     ];
 
-    /**
-     * If we are performing a text query search
-     * 1. Sort results by the mongo textScore
-     * 2. Only match results with a minimum text score
-     * 3. Add a private _textScore field to results for debugging
-     */
     if (queryParams.q) {
-        resultsPipeline.push({
-            $sort: {
-                score: {
-                    $meta: 'textScore'
-                }
-            }
-        });
-
         resultsPipeline.push({
             $addFields: {
                 _textScore: { $meta: 'textScore' }
             }
         });
-    }
-
-    if (queryParams.sort) {
-        const [field, direction] = queryParams.sort.split('|');
-        if (['awardDate', 'amountAwarded'].indexOf(field) !== -1) {
-            const sortConf = {};
-            sortConf[field] = direction === 'asc' ? 1 : -1;
-            resultsPipeline.push({
-                $sort: sortConf
-            });
-        }
     }
 
     const grantsResult = await collection
