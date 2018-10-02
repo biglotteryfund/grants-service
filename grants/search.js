@@ -230,19 +230,19 @@ function buildFacetCriteria() {
 
 function determineSortCriteria(queryParams) {
     let sortConf = { awardDate: -1 };
-    if (queryParams.q) {
-        sortConf = {
-            score: {
-                $meta: 'textScore'
-            }
-        };
-    } else if (queryParams.sort) {
+    if (queryParams.sort) {
         const [field, direction] = queryParams.sort.split('|');
         if (['awardDate', 'amountAwarded'].indexOf(field) !== -1) {
             const newSortConf = {};
             newSortConf[field] = direction === 'asc' ? 1 : -1;
             sortConf = newSortConf;
         }
+    } else if (queryParams.q) {
+        sortConf = {
+            score: {
+                $meta: 'textScore'
+            }
+        };
     }
 
     return sortConf;
