@@ -81,4 +81,18 @@ describe('Past Grants Search', () => {
 
         expect(result).toMatchSnapshot();
     });
+
+    it('should convert multi-word queries into quoted strings', async () => {
+        const result = await queryGrants({
+            q: 'led zeppelin',
+        });
+        expect(result.meta.query.q).toEqual('"led" "zeppelin"');
+    });
+
+    it('should not modify negated words when quoting query strings', async () => {
+        const result = await queryGrants({
+            q: 'led zeppelin -airships',
+        });
+        expect(result.meta.query.q).toEqual('"led" "zeppelin" -airships');
+    });
 });
