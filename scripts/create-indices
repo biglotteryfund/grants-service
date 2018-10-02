@@ -1,17 +1,21 @@
 #!/usr/bin/env node
+/* eslint-disable no-console,no-process-exit */
 'use strict';
 
 require('dotenv').config();
 const { connectToMongo } = require('../lib/mongo');
 const indices = require('../lib/indices');
 
-const createIndices = async () => {
-    const { collection } = await connectToMongo();
-    indices.forEach(i => {
-        collection.createIndex(i.spec, i.options);
-    });
-    console.log('Indices were created');
-    process.exit(1);
-};
-
-createIndices();
+(async () => {
+    try {
+        const { collection } = await connectToMongo();
+        await Promise.all(indices.map(index => {
+            return collection.createIndex(index.spec, index.options)
+        }));
+        console.log('Indices were created');
+        process.exit(0);
+    } catch (error) {
+        console.log(error);
+        process.exit(1);
+    }
+})();
