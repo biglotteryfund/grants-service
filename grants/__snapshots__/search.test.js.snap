@@ -17,6 +17,12 @@ Object {
       "skipCount": 0,
       "totalPages": 0,
     },
+    "query": Object {
+      "orgType": "MadeUpOrg",
+      "postcode": "N1 9GU",
+      "programme": "Big Cheese Fund",
+      "q": "\\"purple\\" \\"monkey\\" \\"dishwasher\\"",
+    },
     "totalResults": 0,
   },
   "results": Array [],
