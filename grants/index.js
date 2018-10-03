@@ -24,7 +24,7 @@ router.route('/:id').get(async (req, res) => {
         client.close();
         res.json({ result });
     } catch (error) {
-        // @TODO capture error in sentry
+        console.error(error);
         res.send({
             result: null,
             error: error
