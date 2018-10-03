@@ -13,7 +13,11 @@ router.route('/').get(async (req, res) => {
         client.close();
         res.json(results);
     } catch (error) {
-        res.send(error);
+        console.error(error);
+        res.json({
+            result: null,
+            error: error
+        });
     }
 });
 
@@ -25,7 +29,7 @@ router.route('/:id').get(async (req, res) => {
         res.json({ result });
     } catch (error) {
         console.error(error);
-        res.send({
+        res.json({
             result: null,
             error: error
         });
@@ -33,7 +37,7 @@ router.route('/:id').get(async (req, res) => {
 });
 
 router.route('/facets').get((req, res) => {
-    res.send(cachedFacets);
+    res.json(cachedFacets);
 });
 
 module.exports = router;
