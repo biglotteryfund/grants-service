@@ -54,14 +54,14 @@ describe('Past Grants Search', () => {
         expect(grants.results.length).toBe(41);
     });
 
-    it('should find grants by postcode', async () => {
+    xit('should find grants by postcode', async () => {
         const grants = await queryGrants({
             postcode: 'BN13 1NQ'
         });
         expect(grants.results[0].title).toEqual('Meetings and outings');
     });
 
-    it('should combine filters', async () => {
+    xit('should combine filters', async () => {
         const grants = await queryGrants({
             orgType: 'Charity',
             q: 'children tennis',
@@ -71,7 +71,7 @@ describe('Past Grants Search', () => {
         expect(grants.results[0].title).toEqual('New Equipment');
     });
 
-    it('should return empty results for invalid queries', async () => {
+    xit('should return empty results for invalid queries', async () => {
         const result = await queryGrants({
             orgType: 'MadeUpOrg',
             q: 'purple monkey dishwasher',
