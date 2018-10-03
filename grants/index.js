@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 const { connectToMongo } = require('../lib/mongo');
-const { ID_PREFIX, fetchGrants } = require('./search');
+const { fetchGrants, fetchGrantById } = require('./search');
 const cachedFacets = require('../data/facets');
 
 router.route('/').get(async (req, res) => {
@@ -11,7 +11,7 @@ router.route('/').get(async (req, res) => {
         const { client, collection } = await connectToMongo();
         const results = await fetchGrants(collection, req.query);
         client.close();
-        res.send(results);
+        res.json(results);
     } catch (error) {
         res.send(error);
     }
@@ -20,20 +20,20 @@ router.route('/').get(async (req, res) => {
 router.route('/:id').get(async (req, res) => {
     try {
         const { client, collection } = await connectToMongo();
-
-        const result = await collection.findOne({
-            id: `${ID_PREFIX}${req.params.id}`
-        });
-
+        const result = await fetchGrantById(collection, req.params.id);
         client.close();
-        res.send(result);
+        res.json({ result });
     } catch (error) {
-        res.send(error);
+        // @TODO capture error in sentry
+        res.send({
+            result: null,
+            error: error
+        });
     }
 });
 
 router.route('/facets').get((req, res) => {
-    res.send(cachedFacets)
+    res.send(cachedFacets);
 });
 
 module.exports = router;

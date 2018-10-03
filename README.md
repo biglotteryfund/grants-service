@@ -10,11 +10,11 @@ Once you have a CSV file, you'll need to import it to your local mongo installat
 
 `./scripts/import-csv <path-to-file.csv> <database-name> <collection-name>`
 
-This script will: 
+This script will:
 
-- Parse the CSV data into JSON
-- Clean up the field names and values (eg. parse dates, add geocoding information etc)
-- Import the data into your local Mongo install
+-   Parse the CSV data into JSON
+-   Clean up the field names and values (eg. parse dates, add geocoding information etc)
+-   Import the data into your local Mongo install
 
 Next, ensure your local `.env` file points to the above database/collection:
 
@@ -30,16 +30,16 @@ When a new dataset is released, you'll need to first run the above script (`impo
 
 Once you've done this and have confirmed it works as expected, you can push the updated dataset live:
 
-1. Export your local Mongo database: 
+1. Export your local Mongo database:
 
     `./scripts/export-local <path-to-backup-directory>`
-    
+
 2. Restore this backup to the remote Mongo instance:
 
     `./scripts/import-remote "list,of,hostnames" <path-to-backup-directory> "new-collection-name"`
-    
+
     Note: you'll need access to the remote Mongo Cloud team account to get the hostnames/passwords required for this command.
-    
+
 3. Verify that the import worked successfully (eg. make sure the number of records exceeds the existing collection, and that data is populated correctly)
 
 4. Update the `MONGO_COLLECTION` environment variable for the `TEST` Lambda function and verify that the test environment serves searches as expected.
@@ -49,9 +49,9 @@ Once you've done this and have confirmed it works as expected, you can push the 
 6. Update the cached facets, eg:
 
     `./scripts/store-facets`
-    
+
     This will generate an updated JSON file with pre-calculated facets (to speed up the initial search without queries, and to use for comparisons on the frontend). You should commit this file.
-    
+
 ## Misc / other
 
 ### Indices
