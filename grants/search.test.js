@@ -61,7 +61,7 @@ describe('Past Grants Search', () => {
         expect(grants.results[0].title).toEqual('Meetings and outings');
     });
 
-    xit('should combine filters', async () => {
+    it('should combine filters', async () => {
         const grants = await queryGrants({
             orgType: 'Charity',
             q: 'children tennis',
@@ -71,7 +71,7 @@ describe('Past Grants Search', () => {
         expect(grants.results[0].title).toEqual('New Equipment');
     });
 
-    xit('should return empty results for invalid queries', async () => {
+    it('should return empty results for invalid queries', async () => {
         const result = await queryGrants({
             orgType: 'MadeUpOrg',
             q: 'purple monkey dishwasher',

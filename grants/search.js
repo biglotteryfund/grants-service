@@ -176,7 +176,7 @@ async function buildMatchCriteria(queryParams) {
         const postcodeData = await request({
             json: true,
             method: 'GET',
-            url: `https://apiii.postcodes.io/postcodes/${queryParams.postcode}`,
+            url: `https://api.postcodes.io/postcodes/${queryParams.postcode}`,
             headers: {
                 'Content-Type': 'application/json'
             }
