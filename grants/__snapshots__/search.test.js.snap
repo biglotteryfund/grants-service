@@ -17,7 +17,9 @@ Object {
     },
     "pagination": Object {
       "currentPage": 1,
+      "nextPageParams": undefined,
       "perPageCount": 50,
+      "prevPageParams": undefined,
       "skipCount": 0,
       "totalPages": 0,
     },
