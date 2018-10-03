@@ -1,6 +1,7 @@
 'use strict';
 const { head } = require('lodash');
 const request = require('request-promise-native');
+const querystring = require('querystring');
 
 /**
  * 360Giving organisation prefix
@@ -400,7 +401,23 @@ async function fetchGrants(collection, queryParams) {
                 currentPage: currentPage,
                 perPageCount: perPageCount,
                 skipCount: skipCount,
-                totalPages: Math.ceil(totalResults / perPageCount)
+                totalPages: Math.ceil(totalResults / perPageCount),
+                get prevPageParams() {
+                    if (this.totalPages > 1 && this.currentPage > 1) {
+                        return querystring.stringify(Object.assign({}, queryParams, {
+                            page: this.currentPage - 1
+                        }));
+                    }
+                    return undefined;
+                },
+                get nextPageParams() {
+                    if (this.totalPages > 1 && this.currentPage < this.totalPages) {
+                        return querystring.stringify(Object.assign({}, queryParams, {
+                            page: this.currentPage + 1
+                        }));
+                    }
+                    return undefined;
+                }
             }
         },
         facets: facets,
