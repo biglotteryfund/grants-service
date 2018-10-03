@@ -129,6 +129,15 @@ async function buildMatchCriteria(queryParams) {
     }
 
     /**
+     * Local authority
+     */
+    if (queryParams.localAuthority) {
+        match.$and.push({
+            'beneficiaryLocation.geoCode': queryParams.localAuthority
+        });
+    }
+
+    /**
      * Handle directly entered postcodes
      * If we have a text query and it looks like a postcode then
      * override the query params to consider this a postcode lookup
