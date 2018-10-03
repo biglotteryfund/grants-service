@@ -172,10 +172,11 @@ async function buildMatchCriteria(queryParams) {
      * Lookup geocodes for postcode from postcodes.io
      */
     if (queryParams.postcode) {
+        console.log('fetching data from api.postcodes.io');
         const postcodeData = await request({
             json: true,
             method: 'GET',
-            url: `https://api.postcodes.io/postcodes/${queryParams.postcode}`,
+            url: `https://apiii.postcodes.io/postcodes/${queryParams.postcode}`,
             headers: {
                 'Content-Type': 'application/json'
             }
