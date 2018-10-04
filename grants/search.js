@@ -16,10 +16,22 @@ const ID_PREFIX = '360G-blf-';
  * we use this to do country lookups.
  */
 const COUNTRY_REGEXES = {
-    england: /^E/,
-    wales: /^W/,
-    scotland: /^S/,
-    'northern-ireland': /^N/
+    england: {
+        pattern: /^E/,
+        title: 'England'
+    },
+    wales: {
+        pattern: /^W/,
+        title: 'Wales'
+    },
+    scotland: {
+        pattern: /^S/,
+        title: 'Scotland'
+    },
+    'northern-ireland': {
+        pattern: /^N/,
+        title: 'Northern Ireland'
+    }
 };
 
 /**
@@ -214,7 +226,7 @@ async function buildMatchCriteria(queryParams) {
         queryParams.country && COUNTRY_REGEXES[queryParams.country];
     if (countryRegex) {
         match.$and.push(
-            { 'beneficiaryLocation.geoCode': { $regex: countryRegex } },
+            { 'beneficiaryLocation.geoCode': { $regex: countryRegex.pattern } },
             { 'beneficiaryLocation.geoCodeType': 'CMLAD' }
         );
     }
@@ -268,6 +280,34 @@ function buildFacetCriteria() {
     return {
         localAuthorities: buildLocationFacet('CMLAD'),
         westminsterConstituencies: buildLocationFacet('WPC'),
+
+        countries: [
+            {
+                $project: {
+                    items: {
+                        $filter: {
+                            input: '$beneficiaryLocation',
+                            as: 'location',
+                            cond: { $eq: ['$$location.geoCodeType', 'CMLAD'] }
+                        }
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $substrBytes: [
+                            { $arrayElemAt: ['$items.geoCode', 0] },
+                            0,
+                            1
+                        ]
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ],
+
         amountAwarded: [
             {
                 $bucket: {
@@ -375,6 +415,25 @@ async function fetchGrants(collection, queryParams) {
      * Pluck out the first (and in our case only) item
      */
     const facets = head(facetsResult);
+
+
+    // Enhance country facet by adding in the proper name
+    // and filtering out any non-standard ones (eg. the country "9")
+    facets.countries = facets.countries.map(countryFacet => {
+        let isValid = false;
+        for (let countryKey in COUNTRY_REGEXES) {
+            const country = COUNTRY_REGEXES[countryKey];
+            isValid = country.pattern.test(countryFacet._id);
+            if (isValid) {
+                countryFacet.name = country.title;
+                countryFacet.value = countryKey;
+                break;
+            }
+        }
+        return countryFacet;
+    }).filter(c => !!c.name);
+
+
 
     /**
      * Peform a separate (fast) count query to get the total results.
