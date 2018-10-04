@@ -418,7 +418,7 @@ async function fetchGrants(collection, queryParams) {
         .toArray();
 
     /**
-     * Peform a second query with $facet pipelines
+     * Perform a second query with $facet pipelines
      * No limit or skip set as we want facets for the full result set.
      */
     const facetsResult = await collection
@@ -481,7 +481,7 @@ async function fetchGrants(collection, queryParams) {
 
 
     /**
-     * Peform a separate (fast) count query to get the total results.
+     * Perform a separate (fast) count query to get the total results.
      */
     const totalResults = await collection.find(matchCriteria).count();
 
