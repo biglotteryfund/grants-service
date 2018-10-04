@@ -168,16 +168,6 @@ async function buildMatchCriteria(queryParams) {
     }
 
     /**
-     * Handle directly entered postcodes
-     * If we have a text query and it looks like a postcode then
-     * override the query params to consider this a postcode lookup
-     */
-    if (queryParams.q && isPostcode(queryParams.q) === true) {
-        queryParams.postcode = queryParams.q;
-        delete queryParams.q;
-    }
-
-    /**
      * Search queries
      *
      * We want search terms to be treated as logical AND querries.
@@ -212,27 +202,36 @@ async function buildMatchCriteria(queryParams) {
      */
     if (queryParams.postcode) {
         console.log('fetching data from api.postcodes.io');
-        const postcodeData = await request({
-            json: true,
-            method: 'GET',
-            url: `https://api.postcodes.io/postcodes/${queryParams.postcode}`,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (postcodeData && postcodeData.result) {
-            match.$or = match.$or.concat([
-                {
-                    'beneficiaryLocation.geoCode': {
-                        $in: [
-                            postcodeData.result.codes.admin_district,
-                            postcodeData.result.codes.admin_ward,
-                            postcodeData.result.codes.parliamentary_constituency
-                        ]
-                    }
+        try {
+            const postcodeData = await request({
+                json: true,
+                method: 'GET',
+                url: `https://api.postcodes.io/postcodes/${queryParams.postcode}`,
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-            ]);
+            });
+
+            if (postcodeData && postcodeData.result) {
+                match.$or = match.$or.concat([
+                    {
+                        'beneficiaryLocation.geoCode': {
+                            $in: [
+                                postcodeData.result.codes.admin_district,
+                                postcodeData.result.codes.admin_ward,
+                                postcodeData.result.codes.parliamentary_constituency
+                            ]
+                        }
+                    }
+                ]);
+            }
+        } catch (requestError) {
+            console.error(requestError);
+            if (requestError.error.error === 'Invalid postcode') {
+                throw new Error('InvalidPostcode');
+            } else {
+                throw new Error();
+            }
         }
     }
 
@@ -384,9 +383,19 @@ async function fetchGrants(collection, queryParams) {
     const currentPage = pageParam > 1 ? pageParam : 1;
     const skipCount = perPageCount * (currentPage - 1);
 
-    const sortCriteria = buildSortCriteria(queryParams);
+    /**
+     * Handle directly entered postcodes
+     * If we have a text query and it looks like a postcode then
+     * override the query params to consider this a postcode lookup
+     */
+    if (queryParams.q && isPostcode(queryParams.q) === true) {
+        queryParams.postcode = queryParams.q;
+        delete queryParams.q;
+    }
+
     const facetCriteria = buildFacetCriteria();
     const matchCriteria = await buildMatchCriteria(queryParams);
+    const sortCriteria = buildSortCriteria(queryParams);
 
     /**
      * Construct the aggregation pipeline
