@@ -47,6 +47,15 @@ function isPostcode(input) {
 }
 
 /**
+ * Turns a number into a localised count
+ * eg. 123456 => 123,456
+ * @param {string} str
+ */
+function numberWithCommas(str = '') {
+    return str.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/**
  * Build sort criteria
  * 1. Default to awardDate (newest first)
  * 2. If we have an explicit sort param use that
@@ -102,7 +111,7 @@ async function buildMatchCriteria(queryParams) {
             .split('|')
             .map(num => parseInt(num, 10));
         match.$and.push({
-            amountAwarded: { $gte: minAmount || 0, $lte: maxAmount || Infinity }
+            amountAwarded: { $gte: minAmount || 0, $lt: maxAmount || Infinity }
         });
     }
 
@@ -276,10 +285,11 @@ function buildLocationFacet(geoCodeType) {
  * Build $facet criteria
  * @see https://docs.mongodb.com/manual/reference/operator/aggregation/facet/index.html
  */
+
+const amountAwardedBuckets = [0, 10000, 50000, 100000, 1000000, Infinity];
+
 function buildFacetCriteria() {
     return {
-        localAuthorities: buildLocationFacet('CMLAD'),
-        westminsterConstituencies: buildLocationFacet('WPC'),
 
         countries: [
             {
@@ -312,11 +322,16 @@ function buildFacetCriteria() {
             {
                 $bucket: {
                     groupBy: '$amountAwarded',
-                    boundaries: [0, 10000, 100000, 1000000, Infinity],
-                    output: { count: { $sum: 1 } }
+                    boundaries: amountAwardedBuckets,
+                    output: {
+                        count: { $sum: 1 }
+                    }
                 }
-            }
+            },
         ],
+
+        localAuthorities: buildLocationFacet('CMLAD'),
+        westminsterConstituencies: buildLocationFacet('WPC'),
         awardDate: [
             {
                 $group: {
@@ -416,6 +431,36 @@ async function fetchGrants(collection, queryParams) {
      */
     const facets = head(facetsResult);
 
+    // Tweak the amountAwarded facet for the custom UI
+    facets.amountAwarded = facets.amountAwarded.map(amount => {
+        // Try to find the next bucket item after this one
+        let lowerBound = amount._id;
+        let upperBound = amountAwardedBuckets[amountAwardedBuckets.indexOf(lowerBound) + 1];
+
+        // We don't use Infinity in the UI so ignore it here
+        if (upperBound === Infinity) {
+           upperBound = undefined;
+        }
+
+        // Build a title string
+        let title;
+        if (lowerBound === 0 && upperBound) {
+            title = `Under £${numberWithCommas(upperBound)}`;
+        } else if (!upperBound) {
+            title = `£${numberWithCommas(lowerBound)}+`;
+        } else {
+            title = `£${numberWithCommas(lowerBound)}–£${numberWithCommas(upperBound)}`;
+        }
+        amount.title = title;
+
+        // Construct a value string for the filter parameter
+        amount.value = lowerBound;
+        if (upperBound) {
+            amount.value += `|${upperBound}`;
+        }
+
+        return amount;
+    });
 
     // Enhance country facet by adding in the proper name
     // and filtering out any non-standard ones (eg. the country "9")
