@@ -5,6 +5,7 @@ const router = express.Router();
 const { connectToMongo } = require('../lib/mongo');
 const { fetchGrants, fetchGrantById } = require('./search');
 const cachedFacets = require('../data/facets');
+const { normaliseError } = require('./error');
 
 router.route('/').get(async (req, res) => {
     try {
@@ -13,10 +14,10 @@ router.route('/').get(async (req, res) => {
         client.close();
         res.json(results);
     } catch (error) {
-        console.error(error);
-        res.json({
+        const normalisedError = normaliseError(error);
+        res.status(normalisedError.status).json({
             result: null,
-            error: error
+            error: normalisedError
         });
     }
 });
@@ -28,10 +29,10 @@ router.route('/:id').get(async (req, res) => {
         client.close();
         res.json({ result });
     } catch (error) {
-        console.error(error);
-        res.json({
+        const normalisedError = normaliseError(error);
+        res.status(normalisedError.status).json({
             result: null,
-            error: error
+            error: normalisedError
         });
     }
 });
