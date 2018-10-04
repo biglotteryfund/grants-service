@@ -5,6 +5,7 @@ Object {
   "facets": Object {
     "amountAwarded": Array [],
     "awardDate": Array [],
+    "countries": Array [],
     "grantProgramme": Array [],
     "localAuthorities": Array [],
     "orgType": Array [],
