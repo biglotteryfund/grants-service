@@ -15,11 +15,30 @@ const ID_PREFIX = '360G-blf-';
  * geocodes start with a letter prefix denoting the country
  * we use this to do country lookups.
  */
-const COUNTRY_REGEXES = {
-    england: /^E/,
-    wales: /^W/,
-    scotland: /^S/,
-    'northern-ireland': /^N/
+const COUNTRIES = {
+    england: {
+        pattern: /^E/,
+        title: 'England'
+    },
+    wales: {
+        pattern: /^W/,
+        title: 'Wales'
+    },
+    scotland: {
+        pattern: /^S/,
+        title: 'Scotland'
+    },
+    'northern-ireland': {
+        pattern: /^N/,
+        title: 'Northern Ireland'
+    }
+};
+
+// The type of geocode
+// Source: https://github.com/ThreeSixtyGiving/standard/blob/master/codelists/geoCodeType.csv
+const GEOCODE_TYPES = {
+    localAuthority: 'CMLAD',
+    constituency: 'WPC'
 };
 
 /**
@@ -32,6 +51,16 @@ function isPostcode(input) {
     return /(gir\s?0aa|[a-zA-Z]{1,2}\d[\da-zA-Z]?\s?(\d[a-zA-Z]{2})?)/.test(
         input
     );
+}
+
+/**
+ * Turns a number into a localised count
+ * eg. 123456 => 123,456
+ * @param {string} str
+ */
+function numberWithCommas(str = '') {
+    const n = parseFloat(str);
+    return n.toLocaleString();
 }
 
 /**
@@ -90,7 +119,7 @@ async function buildMatchCriteria(queryParams) {
             .split('|')
             .map(num => parseInt(num, 10));
         match.$and.push({
-            amountAwarded: { $gte: minAmount || 0, $lte: maxAmount || Infinity }
+            amountAwarded: { $gte: minAmount || 0, $lt: maxAmount || Infinity }
         });
     }
 
@@ -211,11 +240,11 @@ async function buildMatchCriteria(queryParams) {
      * Country
      */
     const countryRegex =
-        queryParams.country && COUNTRY_REGEXES[queryParams.country];
+        queryParams.country && COUNTRIES[queryParams.country];
     if (countryRegex) {
         match.$and.push(
-            { 'beneficiaryLocation.geoCode': { $regex: countryRegex } },
-            { 'beneficiaryLocation.geoCodeType': 'CMLAD' }
+            { 'beneficiaryLocation.geoCode': { $regex: countryRegex.pattern } },
+            { 'beneficiaryLocation.geoCodeType': GEOCODE_TYPES.localAuthority }
         );
     }
 
@@ -264,19 +293,53 @@ function buildLocationFacet(geoCodeType) {
  * Build $facet criteria
  * @see https://docs.mongodb.com/manual/reference/operator/aggregation/facet/index.html
  */
+
+const AMOUNT_AWARDED_BUCKETS = [0, 10000, 50000, 100000, 1000000, Infinity];
+
 function buildFacetCriteria() {
     return {
-        localAuthorities: buildLocationFacet('CMLAD'),
-        westminsterConstituencies: buildLocationFacet('WPC'),
+
+        countries: [
+            {
+                $project: {
+                    items: {
+                        $filter: {
+                            input: '$beneficiaryLocation',
+                            as: 'location',
+                            cond: { $eq: ['$$location.geoCodeType', GEOCODE_TYPES.localAuthority] }
+                        }
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $substrBytes: [
+                            { $arrayElemAt: ['$items.geoCode', 0] },
+                            0,
+                            1
+                        ]
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ],
+
         amountAwarded: [
             {
                 $bucket: {
                     groupBy: '$amountAwarded',
-                    boundaries: [0, 10000, 100000, 1000000, Infinity],
-                    output: { count: { $sum: 1 } }
+                    boundaries: AMOUNT_AWARDED_BUCKETS,
+                    output: {
+                        count: { $sum: 1 }
+                    }
                 }
-            }
+            },
         ],
+
+        localAuthorities: buildLocationFacet(GEOCODE_TYPES.localAuthority),
+        westminsterConstituencies: buildLocationFacet(GEOCODE_TYPES.constituency),
         awardDate: [
             {
                 $group: {
@@ -363,7 +426,7 @@ async function fetchGrants(collection, queryParams) {
         .toArray();
 
     /**
-     * Peform a second query with $facet pipelines
+     * Perform a second query with $facet pipelines
      * No limit or skip set as we want facets for the full result set.
      */
     const facetsResult = await collection
@@ -376,8 +439,57 @@ async function fetchGrants(collection, queryParams) {
      */
     const facets = head(facetsResult);
 
+    // Tweak the amountAwarded facet for the custom UI
+    facets.amountAwarded = facets.amountAwarded.map(amount => {
+        // Try to find the next bucket item after this one
+        let lowerBound = amount._id;
+        let upperBound = AMOUNT_AWARDED_BUCKETS[AMOUNT_AWARDED_BUCKETS.indexOf(lowerBound) + 1];
+
+        // We don't use Infinity in the UI so ignore it here
+        if (upperBound === Infinity) {
+           upperBound = undefined;
+        }
+
+        // Build a title string
+        let title;
+        if (lowerBound === 0 && upperBound) {
+            title = `Under £${numberWithCommas(upperBound)}`;
+        } else if (!upperBound) {
+            title = `£${numberWithCommas(lowerBound)}+`;
+        } else {
+            title = `£${numberWithCommas(lowerBound)}–£${numberWithCommas(upperBound)}`;
+        }
+        amount.title = title;
+
+        // Construct a value string for the filter parameter
+        amount.value = lowerBound;
+        if (upperBound) {
+            amount.value += `|${upperBound}`;
+        }
+
+        return amount;
+    });
+
+    // Enhance country facet by adding in the proper name
+    // and filtering out any non-standard ones (eg. the country "9")
+    facets.countries = facets.countries.map(countryFacet => {
+        let isValid = false;
+        for (let countryKey in COUNTRIES) {
+            const country = COUNTRIES[countryKey];
+            isValid = country.pattern.test(countryFacet._id);
+            if (isValid) {
+                countryFacet.name = country.title;
+                countryFacet.value = countryKey;
+                break;
+            }
+        }
+        return countryFacet;
+    }).filter(c => !!c.name);
+
+
+
     /**
-     * Peform a separate (fast) count query to get the total results.
+     * Perform a separate (fast) count query to get the total results.
      */
     const totalResults = await collection.find(matchCriteria).count();
 
