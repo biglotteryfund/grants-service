@@ -15,7 +15,7 @@ const ID_PREFIX = '360G-blf-';
  * geocodes start with a letter prefix denoting the country
  * we use this to do country lookups.
  */
-const COUNTRY_REGEXES = {
+const COUNTRIES = {
     england: {
         pattern: /^E/,
         title: 'England'
@@ -32,6 +32,13 @@ const COUNTRY_REGEXES = {
         pattern: /^N/,
         title: 'Northern Ireland'
     }
+};
+
+// The type of geocode
+// Source: https://github.com/ThreeSixtyGiving/standard/blob/master/codelists/geoCodeType.csv
+const GEOCODE_TYPES = {
+    localAuthority: 'CMLAD',
+    constituency: 'WPC'
 };
 
 /**
@@ -52,7 +59,8 @@ function isPostcode(input) {
  * @param {string} str
  */
 function numberWithCommas(str = '') {
-    return str.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const n = parseFloat(str);
+    return n.toLocaleString();
 }
 
 /**
@@ -232,11 +240,11 @@ async function buildMatchCriteria(queryParams) {
      * Country
      */
     const countryRegex =
-        queryParams.country && COUNTRY_REGEXES[queryParams.country];
+        queryParams.country && COUNTRIES[queryParams.country];
     if (countryRegex) {
         match.$and.push(
             { 'beneficiaryLocation.geoCode': { $regex: countryRegex.pattern } },
-            { 'beneficiaryLocation.geoCodeType': 'CMLAD' }
+            { 'beneficiaryLocation.geoCodeType': GEOCODE_TYPES.localAuthority }
         );
     }
 
@@ -286,7 +294,7 @@ function buildLocationFacet(geoCodeType) {
  * @see https://docs.mongodb.com/manual/reference/operator/aggregation/facet/index.html
  */
 
-const amountAwardedBuckets = [0, 10000, 50000, 100000, 1000000, Infinity];
+const AMOUNT_AWARDED_BUCKETS = [0, 10000, 50000, 100000, 1000000, Infinity];
 
 function buildFacetCriteria() {
     return {
@@ -298,7 +306,7 @@ function buildFacetCriteria() {
                         $filter: {
                             input: '$beneficiaryLocation',
                             as: 'location',
-                            cond: { $eq: ['$$location.geoCodeType', 'CMLAD'] }
+                            cond: { $eq: ['$$location.geoCodeType', GEOCODE_TYPES.localAuthority] }
                         }
                     }
                 }
@@ -322,7 +330,7 @@ function buildFacetCriteria() {
             {
                 $bucket: {
                     groupBy: '$amountAwarded',
-                    boundaries: amountAwardedBuckets,
+                    boundaries: AMOUNT_AWARDED_BUCKETS,
                     output: {
                         count: { $sum: 1 }
                     }
@@ -330,8 +338,8 @@ function buildFacetCriteria() {
             },
         ],
 
-        localAuthorities: buildLocationFacet('CMLAD'),
-        westminsterConstituencies: buildLocationFacet('WPC'),
+        localAuthorities: buildLocationFacet(GEOCODE_TYPES.localAuthority),
+        westminsterConstituencies: buildLocationFacet(GEOCODE_TYPES.constituency),
         awardDate: [
             {
                 $group: {
@@ -435,7 +443,7 @@ async function fetchGrants(collection, queryParams) {
     facets.amountAwarded = facets.amountAwarded.map(amount => {
         // Try to find the next bucket item after this one
         let lowerBound = amount._id;
-        let upperBound = amountAwardedBuckets[amountAwardedBuckets.indexOf(lowerBound) + 1];
+        let upperBound = AMOUNT_AWARDED_BUCKETS[AMOUNT_AWARDED_BUCKETS.indexOf(lowerBound) + 1];
 
         // We don't use Infinity in the UI so ignore it here
         if (upperBound === Infinity) {
@@ -466,8 +474,8 @@ async function fetchGrants(collection, queryParams) {
     // and filtering out any non-standard ones (eg. the country "9")
     facets.countries = facets.countries.map(countryFacet => {
         let isValid = false;
-        for (let countryKey in COUNTRY_REGEXES) {
-            const country = COUNTRY_REGEXES[countryKey];
+        for (let countryKey in COUNTRIES) {
+            const country = COUNTRIES[countryKey];
             isValid = country.pattern.test(countryFacet._id);
             if (isValid) {
                 countryFacet.name = country.title;
