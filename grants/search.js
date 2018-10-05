@@ -392,66 +392,8 @@ function buildFacetCriteria() {
     };
 }
 
-/**
- * Fetch grants
- */
-async function fetchGrants(collection, queryParams) {
-    const perPageCount =
-        (queryParams.limit && parseInt(queryParams.limit)) || 50;
-    const pageParam = queryParams.page && parseInt(queryParams.page);
-    const currentPage = pageParam > 1 ? pageParam : 1;
-    const skipCount = perPageCount * (currentPage - 1);
-
-    /**
-     * Handle directly entered postcodes
-     * If we have a text query and it looks like a postcode then
-     * override the query params to consider this a postcode lookup
-     */
-    if (queryParams.q && isPostcode(queryParams.q) === true) {
-        queryParams.postcode = queryParams.q;
-        delete queryParams.q;
-    }
-
+async function fetchFacets(collection, matchCriteria = {}, ) {
     const facetCriteria = buildFacetCriteria();
-    const matchCriteria = await buildMatchCriteria(queryParams);
-    const sortCriteria = buildSortCriteria(queryParams);
-
-    /**
-     * Construct the aggregation pipeline
-     * Includes stripping 360Giving organisation prefix
-     * from the public ID field.
-     */
-    const resultsPipeline = [
-        { $match: matchCriteria },
-        { $sort: sortCriteria },
-        {
-            $addFields: {
-                id: {
-                    $arrayElemAt: [{ $split: ['$id', ID_PREFIX] }, 1]
-                }
-            }
-        }
-    ];
-
-    /**
-     * Expose the search score as a custom field
-     */
-    if (queryParams.q) {
-        resultsPipeline.push({
-            $addFields: {
-                _textScore: { $meta: 'textScore' }
-            }
-        });
-    }
-
-    /**
-     * Perform query for grant results
-     */
-    const grantsResult = await collection
-        .aggregate(resultsPipeline, { allowDiskUse: true })
-        .skip(skipCount)
-        .limit(perPageCount)
-        .toArray();
 
     /**
      * Perform a second query with $facet pipelines
@@ -475,7 +417,7 @@ async function fetchGrants(collection, queryParams) {
 
         // We don't use Infinity in the UI so ignore it here
         if (upperBound === Infinity) {
-           upperBound = undefined;
+            upperBound = undefined;
         }
 
         // Build a title string
@@ -518,11 +460,81 @@ async function fetchGrants(collection, queryParams) {
     facets.localAuthorities = facets.localAuthorities.filter(f => !!f._id);
     facets.westminsterConstituencies = facets.westminsterConstituencies.filter(f => !!f._id);
 
+    return facets;
+}
+
+/**
+ * Fetch grants
+ */
+async function fetchGrants(mongo, queryParams) {
+    const perPageCount =
+        (queryParams.limit && parseInt(queryParams.limit)) || 50;
+    const pageParam = queryParams.page && parseInt(queryParams.page);
+    const currentPage = pageParam > 1 ? pageParam : 1;
+    const skipCount = perPageCount * (currentPage - 1);
+
+    /**
+     * Handle directly entered postcodes
+     * If we have a text query and it looks like a postcode then
+     * override the query params to consider this a postcode lookup
+     */
+    if (queryParams.q && isPostcode(queryParams.q) === true) {
+        queryParams.postcode = queryParams.q;
+        delete queryParams.q;
+    }
+
+
+    const matchCriteria = await buildMatchCriteria(queryParams);
+    const sortCriteria = buildSortCriteria(queryParams);
+
+    /**
+     * Construct the aggregation pipeline
+     * Includes stripping 360Giving organisation prefix
+     * from the public ID field.
+     */
+    const resultsPipeline = [
+        { $match: matchCriteria },
+        { $sort: sortCriteria },
+        {
+            $addFields: {
+                id: {
+                    $arrayElemAt: [{ $split: ['$id', ID_PREFIX] }, 1]
+                }
+            }
+        }
+    ];
+
+    /**
+     * Expose the search score as a custom field
+     */
+    if (queryParams.q) {
+        resultsPipeline.push({
+            $addFields: {
+                _textScore: { $meta: 'textScore' }
+            }
+        });
+    }
 
     /**
      * Perform a separate (fast) count query to get the total results.
      */
-    const totalResults = await collection.find(matchCriteria).count();
+    const totalGrants = await mongo.grantsCollection.find({}).count();
+    const totalGrantsForQuery = await mongo.grantsCollection.find(matchCriteria).count();
+
+    /**
+     * Perform query for grant results
+     */
+    const grantsResult = await mongo.grantsCollection
+        .aggregate(resultsPipeline, { allowDiskUse: true })
+        .skip(skipCount)
+        .limit(perPageCount)
+        .toArray();
+
+    const shouldUseCachedFacets = totalGrants === totalGrantsForQuery;
+
+    const facets = shouldUseCachedFacets ?
+        await mongo.facetsCollection.findOne() :
+        await fetchFacets(mongo.grantsCollection, matchCriteria);
 
     /**
      * Pluck out the current sort type from the sort criteria
@@ -534,7 +546,8 @@ async function fetchGrants(collection, queryParams) {
 
     return {
         meta: {
-            totalResults: totalResults,
+            usingFacetCache: shouldUseCachedFacets,
+            totalResults: totalGrantsForQuery,
             query: queryParams,
             currentSort: {
                 type: currentSortType,
@@ -544,7 +557,7 @@ async function fetchGrants(collection, queryParams) {
                 currentPage: currentPage,
                 perPageCount: perPageCount,
                 skipCount: skipCount,
-                totalPages: Math.ceil(totalResults / perPageCount),
+                totalPages: Math.ceil(totalGrantsForQuery / perPageCount),
                 get prevPageParams() {
                     if (this.totalPages > 1 && this.currentPage > 1) {
                         return querystring.stringify(Object.assign({}, queryParams, {
@@ -582,5 +595,6 @@ function fetchGrantById(collection, id) {
 
 module.exports = {
     fetchGrants,
-    fetchGrantById
+    fetchGrantById,
+    fetchFacets
 };
