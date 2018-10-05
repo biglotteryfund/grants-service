@@ -168,6 +168,24 @@ async function buildMatchCriteria(queryParams) {
     }
 
     /**
+     * Westminster Constituency
+     */
+    if (queryParams.constituency) {
+        match.$and.push({
+            'beneficiaryLocation.geoCode': queryParams.constituency
+        });
+    }
+
+    /**
+     * Recipient
+     */
+    if (queryParams.recipient) {
+        match.$and.push({
+            'recipientOrganization.id': queryParams.recipient
+        });
+    }
+
+    /**
      * Search queries
      *
      * We want search terms to be treated as logical AND querries.
