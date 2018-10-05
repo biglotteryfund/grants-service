@@ -230,7 +230,7 @@ async function buildMatchCriteria(queryParams) {
             if (requestError.error.error === 'Invalid postcode') {
                 throw new Error('InvalidPostcode');
             } else {
-                throw new Error();
+                throw new Error('PostcodeApiFailure');
             }
         }
     }
@@ -345,7 +345,8 @@ function buildFacetCriteria() {
                     _id: { $year: '$awardDate' },
                     count: { $sum: 1 }
                 }
-            }
+            },
+            { $sort: { _id: -1 } }
         ],
         grantProgramme: [
             {
@@ -495,6 +496,9 @@ async function fetchGrants(collection, queryParams) {
         return countryFacet;
     }).filter(c => !!c.name);
 
+    // Strip out empty locations from missing geocodes
+    facets.localAuthorities = facets.localAuthorities.filter(f => !!f._id);
+    facets.westminsterConstituencies = facets.westminsterConstituencies.filter(f => !!f._id);
 
 
     /**
