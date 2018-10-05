@@ -10,6 +10,7 @@ describe('Past Grants Search', () => {
     let connection;
     let db;
     let grantsCollection;
+    let facetsCollection;
 
     beforeAll(async () => {
         connection = await MongoClient.connect(global.__MONGO_URI__);
@@ -17,6 +18,7 @@ describe('Past Grants Search', () => {
 
         // create mock data
         grantsCollection = db.collection('grants');
+        facetsCollection = db.collection('facets');
         await grantsCollection.insertMany(mockGrantData.results);
 
         // add the indices
@@ -31,7 +33,7 @@ describe('Past Grants Search', () => {
     });
 
     // Convenience method for querying directly without passing a collection
-    const queryGrants = async query => fetchGrants(grantsCollection, query);
+    const queryGrants = async query => fetchGrants({grantsCollection, facetsCollection}, query);
 
     it('should find grants by text search', async () => {
         const grants = await queryGrants({

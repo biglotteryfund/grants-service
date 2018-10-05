@@ -31,6 +31,7 @@ Object {
       "q": "\\"purple\\" \\"monkey\\" \\"dishwasher\\"",
     },
     "totalResults": 0,
+    "usingFacetCache": false,
   },
   "results": Array [],
 }
