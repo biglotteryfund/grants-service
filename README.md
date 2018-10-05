@@ -1,4 +1,4 @@
-# Experimental grants micro-service
+# Grants micro-service
 
 This service is a lambda function which queries an external MongoDB instance for grant data.
 
