@@ -15,6 +15,13 @@ function normaliseError(error) {
                 title: 'Invalid postcode lookup'
             };
             break;
+        case 'PostcodeApiFailure':
+            errorCode = {
+                status: 400,
+                code: 'ERR-POSTCODE-API',
+                title: 'Error with postcodes.io API'
+            };
+            break;
         case 'MongoConnect':
             errorCode = {
                 status: 400,

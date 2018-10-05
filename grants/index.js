@@ -5,7 +5,7 @@ const router = express.Router();
 const { connectToMongo } = require('../lib/mongo');
 const { fetchGrants, fetchGrantById } = require('./search');
 const cachedFacets = require('../data/facets');
-const { normaliseError } = require('./error');
+const { normaliseError } = require('./errors');
 
 router.route('/').get(async (req, res) => {
     try {
