@@ -1,5 +1,5 @@
 'use strict';
-const { head } = require('lodash');
+const { head, get } = require('lodash');
 const request = require('request-promise-native');
 const querystring = require('querystring');
 
@@ -520,6 +520,12 @@ async function fetchGrants(mongo, queryParams) {
      */
     const totalGrants = await mongo.grantsCollection.find({}).count();
     const totalGrantsForQuery = await mongo.grantsCollection.find(matchCriteria).count();
+    let totalAwarded = await mongo.grantsCollection.aggregate([
+        { $match: matchCriteria  },
+        { $group: { _id : null, sum : { $sum: "$amountAwarded" } } },
+        { $project: { _id: 0, sum: 1 } }
+    ]).toArray();
+    totalAwarded = get(totalAwarded, '[0].sum', false);
 
     /**
      * Perform query for grant results
@@ -548,6 +554,7 @@ async function fetchGrants(mongo, queryParams) {
         meta: {
             usingFacetCache: shouldUseCachedFacets,
             totalResults: totalGrantsForQuery,
+            totalAwarded: totalAwarded,
             query: queryParams,
             currentSort: {
                 type: currentSortType,
