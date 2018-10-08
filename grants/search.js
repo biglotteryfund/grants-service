@@ -48,9 +48,7 @@ const GEOCODE_TYPES = {
  * @param {string} input
  */
 function isPostcode(input) {
-    return /(gir\s?0aa|[a-zA-Z]{1,2}\d[\da-zA-Z]?\s?(\d[a-zA-Z]{2})?)/.test(
-        input
-    );
+    return input.match(/(gir\s?0aa|[a-zA-Z]{1,2}\d[\da-zA-Z]?\s?(\d[a-zA-Z]{2})?)/);
 }
 
 /**
@@ -224,20 +222,21 @@ async function buildMatchCriteria(queryParams) {
             const postcodeData = await request({
                 json: true,
                 method: 'GET',
-                url: `https://api.postcodes.io/postcodes/${queryParams.postcode}`,
+                url: `https://api.postcodes.io/postcodes?q=${queryParams.postcode}`,
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
 
             if (postcodeData && postcodeData.result) {
+                const firstMatch = postcodeData.result[0];
                 match.$or = match.$or.concat([
                     {
                         'beneficiaryLocation.geoCode': {
                             $in: [
-                                postcodeData.result.codes.admin_district,
-                                postcodeData.result.codes.admin_ward,
-                                postcodeData.result.codes.parliamentary_constituency
+                                firstMatch.codes.admin_district,
+                                firstMatch.codes.admin_ward,
+                                firstMatch.codes.parliamentary_constituency
                             ]
                         }
                     }
@@ -478,11 +477,14 @@ async function fetchGrants(mongo, queryParams) {
      * If we have a text query and it looks like a postcode then
      * override the query params to consider this a postcode lookup
      */
-    if (queryParams.q && isPostcode(queryParams.q) === true) {
-        queryParams.postcode = queryParams.q;
-        delete queryParams.q;
+    const postcodeSearch = isPostcode(queryParams.q);
+    if (queryParams.q && postcodeSearch) {
+        let postcode = postcodeSearch[0];
+        queryParams.q = queryParams.q.replace(postcode, '');
+        queryParams.postcode = postcode;
+    } else {
+        delete queryParams.postcode;
     }
-
 
     const matchCriteria = await buildMatchCriteria(queryParams);
     const sortCriteria = buildSortCriteria(queryParams);
