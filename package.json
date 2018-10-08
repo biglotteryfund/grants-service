@@ -8,7 +8,7 @@
     "node": ">=8.3.0"
   },
   "scripts": {
-    "start": "sls offline start",
+    "start": "sls offline start --dontPrintOutput",
     "test": "eslint . && jest --detectOpenHandles",
     "format": "prettier --single-quote --write *.js *.yml {grants,lib}/**/*.js README.md",
     "deployTest": "sls deploy --stage=test --region=eu-west-2",

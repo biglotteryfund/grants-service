@@ -26,10 +26,10 @@ Object {
     },
     "query": Object {
       "orgType": "MadeUpOrg",
-      "postcode": "N1 9GU",
       "programme": "Big Cheese Fund",
       "q": "\\"purple\\" \\"monkey\\" \\"dishwasher\\"",
     },
+    "totalAwarded": false,
     "totalResults": 0,
     "usingFacetCache": false,
   },
