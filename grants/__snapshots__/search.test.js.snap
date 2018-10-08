@@ -30,6 +30,7 @@ Object {
       "programme": "Big Cheese Fund",
       "q": "\\"purple\\" \\"monkey\\" \\"dishwasher\\"",
     },
+    "totalAwarded": false,
     "totalResults": 0,
     "usingFacetCache": false,
   },
