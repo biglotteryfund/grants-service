@@ -48,7 +48,7 @@ const GEOCODE_TYPES = {
  * @param {string} input
  */
 function isPostcode(input) {
-    return input.match(/(gir\s?0aa|[a-zA-Z]{1,2}\d[\da-zA-Z]?\s?(\d[a-zA-Z]{2})?)/);
+    return input && input.match(/(gir\s?0aa|[a-zA-Z]{1,2}\d[\da-zA-Z]?\s?(\d[a-zA-Z]{2})?)/);
 }
 
 /**
