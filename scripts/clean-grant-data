@@ -111,12 +111,37 @@ const rename = data => {
 
 };
 
-const fixStupidTypo = data => {
+// Replace an egregious spelling error on 22k+ records
+const fixHeroesReturnTypo = data => {
     const wrong = 'This is a programme for individual veterans as opposed to organisaitons';
     const right = 'This is a programme for individual veterans as opposed to organisations';
     data.recipientOrganization = data.recipientOrganization.map(org => {
-        org.name = org.name.replace(wrong, right)
+        if (org.name.indexOf(wrong) !== -1) {
+            org.name = org.name.replace(wrong, right);
+        }
         return org;
+    });
+    return data;
+};
+
+// Replace some wrongly-encoded characters (mostly quotes) with the correct symbols
+const fixEncodingIssues = data => {
+    // eg [pattern, replacement]
+    const encodingFixes = [
+        [/â€™/g, "'"],
+        [/â€˜/g, "'"],
+        [/â€™/g, "'"],
+        [/â€“/g, "–"],
+        [/â€¦/g, "…"],
+        [/â€œ/g, '"'],
+        [/â€/g, '"'], // must come last, otherwise too general
+    ];
+    encodingFixes.forEach(pair => {
+        let [wrong, right] = pair;
+        const hasBrokenTitle = data.title.match(wrong);
+        if (hasBrokenTitle) {
+            data.title = data.title.replace(wrong, right);
+        }
     });
     return data;
 };
@@ -163,9 +188,9 @@ getStream().pipe(es.mapSync((data) => {
         .map(parseDates)
         .map(separateOrgType)
         .map(rename)
-        .map(fixStupidTypo)
+        .map(fixHeroesReturnTypo)
+        .map(fixEncodingIssues)
         .map(addLocations);
-
     outputFileStream.write(JSON.stringify(cleaned[0], null, 4) + '\n');
 }).on('error', function (err) {
     console.log('Error parsing JSON', err);
