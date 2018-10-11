@@ -79,18 +79,6 @@ const rename = data => {
                 organisationType: data['organisationType'] // @TODO https://github.com/OpenDataServices/grantnav/issues/490
             }
         ],
-        beneficiaryLocation: [
-            {
-                name: data['Recipient Org:Location:0:Name'],
-                geoCode: data['Recipient Org:Location:0:Geographic Code'],
-                geoCodeType: 'WD'
-            },
-            {
-                name: data['Recipient Org:Location:1:Name'],
-                geoCode: data['Recipient Org:Location:1:Geographic Code'],
-                geoCodeType: 'CMLAD'
-            },
-        ],
         fundingOrganization: [
             {
                 id: data['Funding Org:Identifier'],
@@ -105,6 +93,30 @@ const rename = data => {
         ],
         dateModified: data['Last modified']
     };
+
+    // Some records have no location, so only add that field if we find one
+    if (data['Recipient Org:Location:0:Name'] && data['Recipient Org:Location:0:Name'] !== '') {
+        // Add the first location (always a ward code)
+        newData.beneficiaryLocation = [
+            {
+                name: data['Recipient Org:Location:0:Name'],
+                geoCode: data['Recipient Org:Location:0:Geographic Code'],
+                geoCodeType: 'WD'
+            }
+        ];
+
+        // There's a slim possibility a record has one location, but not the second
+        // So add the local authority if we have one
+        if (data['Recipient Org:Location:1:Name'] && data['Recipient Org:Location:1:Name'] !== '') {
+            newData.beneficiaryLocation.push(
+                {
+                    name: data['Recipient Org:Location:1:Name'],
+                    geoCode: data['Recipient Org:Location:1:Geographic Code'],
+                    geoCodeType: 'CMLAD'
+                }
+            );
+        }
+    }
 
     // Strip out null / undefined
     return _.pickBy(newData, _.identity);
@@ -153,7 +165,7 @@ const fixEncodingIssues = data => {
 
 const addLocations = data => {
     // Find the first location (eg. ward)
-    const wardCode = data.beneficiaryLocation[0].geoCode || false;
+    const wardCode = (data.beneficiaryLocation && data.beneficiaryLocation[0].geoCode) || false;
     const match = wardLocations.find(m => m.wardCode === wardCode);
 
     if (match) {
