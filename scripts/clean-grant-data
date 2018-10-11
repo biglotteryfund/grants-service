@@ -76,7 +76,9 @@ const rename = data => {
                 name: data['Recipient Org:Name'],
                 charityNumber: data['Recipient Org:Charity Number'] || undefined,
                 companyNumber: data['Recipient Org:Company Number'] || undefined,
-                organisationType: data['organisationType'] // @TODO https://github.com/OpenDataServices/grantnav/issues/490
+                // @TODO https://github.com/OpenDataServices/grantnav/issues/490
+                organisationType: data['organisationType'],
+                organisationSubtype: data['organisationSubtype']
             }
         ],
         fundingOrganization: [
