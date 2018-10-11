@@ -12,7 +12,7 @@ const indices = require('../lib/indices');
         await Promise.all(indices.map(index => {
             return grantsCollection.createIndex(index.spec, index.options)
         }));
-        console.log('Indices were created');
+        console.log(`Indices were created for ${process.env.MONGO_COLLECTION}`);
         process.exit(0);
     } catch (error) {
         console.log(error);

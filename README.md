@@ -32,11 +32,11 @@ Once you've done this and have confirmed it works as expected, you can push the 
 
 1. Export your local Mongo database:
 
-    `./scripts/export-local <path-to-backup-directory>`
+    `./scripts/export-local <path-to-backup-directory> <name-of-local-collection>`
 
 2. Restore this backup to the remote Mongo instance:
 
-    `./scripts/import-remote "list,of,hostnames" <path-to-backup-directory> "new-collection-name"`
+    `./scripts/import-remote "list,of,hostnames" <path-to-backup-directory> "local-collection_name" "new-collection-name"`
 
     Note: you'll need access to the remote Mongo Cloud team account to get the hostnames/passwords required for this command.
 
