@@ -2,7 +2,8 @@
 
 HOSTNAMES=$1
 BACKUP_DIR=$2
-TMP_NAME=$3
+SRC_COLL=$3
+DEST_COLL=$4
 
 if [ -z "$1" ]
   then
@@ -19,12 +20,19 @@ fi
 
 if [ -z "$3" ]
   then
-    echo "Third argument should be a name for the newly-created database"
+    echo "Third argument should be the name of the local collection in the backup directory"
     exit 1
 fi
 
-DEST_COLLECTION=blf.$TMP_NAME
+if [ -z "$4" ]
+  then
+    echo "Fourth argument should be the desired name of the new remote collection"
+    exit 1
+fi
 
-mongorestore --host "$HOSTNAMES" --ssl --sslAllowInvalidHostnames --username biglotteryfund --authenticationDatabase admin --nsInclude 'blf.*' --nsFrom 'blf.grants' --nsTo $DEST_COLLECTION "$BACKUP_DIR"
+SOURCE_COLLECTION=blf.$SRC_COLL
+DEST_COLLECTION=blf.$DEST_COLL
+
+mongorestore --host "$HOSTNAMES" --ssl --sslAllowInvalidHostnames --username biglotteryfund --authenticationDatabase admin --nsInclude 'blf.*' --nsFrom $SOURCE_COLLECTION --nsTo $DEST_COLLECTION "$BACKUP_DIR"
 
 echo "Import successful! Now go and check the data is correct, and cut over to the new collection ($DEST_COLLECTION)"

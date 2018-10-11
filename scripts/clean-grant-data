@@ -142,7 +142,12 @@ const fixEncodingIssues = data => {
         if (hasBrokenTitle) {
             data.title = data.title.replace(wrong, right);
         }
+        const hasBrokenDescription = data.description.match(wrong);
+        if (hasBrokenDescription) {
+            data.description = data.description.replace(wrong, right);
+        }
     });
+
     return data;
 };
 

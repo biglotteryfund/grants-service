@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 BACKUP_DIR=$1
+COLLECTION=$2
 
 if [ -z "$1" ]
   then
@@ -8,9 +9,15 @@ if [ -z "$1" ]
     exit 1
 fi
 
-mongodump --db blf --collection grants --out "$BACKUP_DIR"
+if [ -z "$2" ]
+  then
+    echo "Second argument should be the name of the local collection to back up"
+    exit 1
+fi
+
+mongodump --db blf --collection "$COLLECTION" --out "$BACKUP_DIR"
 
 echo "Dump completed!"
 echo "To upload this export to the remote Mongo instance, use the following command:"
 echo ""
-echo "./scripts/import-remote \"list,of,hostnames\"" $BACKUP_DIR "new-collection-name"
+echo "./scripts/import-remote \"list,of,hostnames\"" $BACKUP_DIR "local-collection_name" "new-collection-name"
