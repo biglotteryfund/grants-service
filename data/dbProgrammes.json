@@ -1,0 +1,584 @@
+{
+  "grantProgrammes": [
+    {
+      "_id": "2014 Communities",
+      "count": 3888
+    },
+    {
+      "_id": "Active Futures",
+      "count": 41
+    },
+    {
+      "_id": "Active Lifestyles",
+      "count": 248
+    },
+    {
+      "_id": "Activities for Young People",
+      "count": 1
+    },
+    {
+      "_id": "AdvantAGE",
+      "count": 31
+    },
+    {
+      "_id": "Advice Plus",
+      "count": 109
+    },
+    {
+      "_id": "Advice Services Transition Fund",
+      "count": 234
+    },
+    {
+      "_id": "Ageing Better",
+      "count": 15
+    },
+    {
+      "_id": "Ageing Better - Partnership Funding",
+      "count": 32
+    },
+    {
+      "_id": "Arrangements",
+      "count": 109
+    },
+    {
+      "_id": "Awards for All",
+      "count": 126495
+    },
+    {
+      "_id": "Awards for All Northern Ireland",
+      "count": 6464
+    },
+    {
+      "_id": "Awards for All Scotland",
+      "count": 2948
+    },
+    {
+      "_id": "BASIS",
+      "count": 398
+    },
+    {
+      "_id": "BIG Innovation",
+      "count": 14
+    },
+    {
+      "_id": "Big Local Trust: Getting people involved",
+      "count": 44
+    },
+    {
+      "_id": "Breathing Places",
+      "count": 1303
+    },
+    {
+      "_id": "Bright New Futures",
+      "count": 18
+    },
+    {
+      "_id": "Building Better Opportunities",
+      "count": 351
+    },
+    {
+      "_id": "Building Quality Childcare",
+      "count": 40
+    },
+    {
+      "_id": "Buildings Change Trust",
+      "count": 1
+    },
+    {
+      "_id": "Celebrate",
+      "count": 1938
+    },
+    {
+      "_id": "Changing Spaces",
+      "count": 18
+    },
+    {
+      "_id": "Child's Play Programme",
+      "count": 20
+    },
+    {
+      "_id": "Childcare",
+      "count": 71
+    },
+    {
+      "_id": "Children's Play",
+      "count": 351
+    },
+    {
+      "_id": "Childrens Play",
+      "count": 2
+    },
+    {
+      "_id": "Childrens Play: Playful Ideas",
+      "count": 63
+    },
+    {
+      "_id": "Collaboration",
+      "count": 4
+    },
+    {
+      "_id": "Communities Living Sustainably",
+      "count": 42
+    },
+    {
+      "_id": "Communities and Families Fund",
+      "count": 751
+    },
+    {
+      "_id": "Community Access to Lifelong Learning",
+      "count": 1
+    },
+    {
+      "_id": "Community Asset Transfer",
+      "count": 5
+    },
+    {
+      "_id": "Community Asset Transfer 2",
+      "count": 18
+    },
+    {
+      "_id": "Community Asset Transfer Round 2",
+      "count": 28
+    },
+    {
+      "_id": "Community Assets",
+      "count": 42
+    },
+    {
+      "_id": "Community Buildings",
+      "count": 268
+    },
+    {
+      "_id": "Community Buildings Trial Programme",
+      "count": 1
+    },
+    {
+      "_id": "Community Libraries",
+      "count": 58
+    },
+    {
+      "_id": "Community Sport (Active Lifestyles)",
+      "count": 61
+    },
+    {
+      "_id": "Community Sport - SCNI",
+      "count": 1
+    },
+    {
+      "_id": "Community Voice",
+      "count": 25
+    },
+    {
+      "_id": "Community Wildlife",
+      "count": 261
+    },
+    {
+      "_id": "Complex Needs",
+      "count": 12
+    },
+    {
+      "_id": "Coronary Heart Disease/Stroke/Cancer",
+      "count": 2
+    },
+    {
+      "_id": "Create Your Space",
+      "count": 22
+    },
+    {
+      "_id": "Culture for All",
+      "count": 205
+    },
+    {
+      "_id": "Delegation pilot programme",
+      "count": 1
+    },
+    {
+      "_id": "Diagnostic Equipment",
+      "count": 1
+    },
+    {
+      "_id": "Digitisation",
+      "count": 1
+    },
+    {
+      "_id": "Empowering Young People",
+      "count": 34
+    },
+    {
+      "_id": "Energy Efficient Venues (Large)",
+      "count": 97
+    },
+    {
+      "_id": "Energy Efficient Venues (Small)",
+      "count": 353
+    },
+    {
+      "_id": "Extended Schools",
+      "count": 107
+    },
+    {
+      "_id": "Family Learning",
+      "count": 114
+    },
+    {
+      "_id": "Fifteenth Anniversary Awards",
+      "count": 14
+    },
+    {
+      "_id": "Fulfilling Lives: A Better Start",
+      "count": 20
+    },
+    {
+      "_id": "Fulfilling Lives: HeadStart",
+      "count": 6
+    },
+    {
+      "_id": "Fulfilling lives: HeadStart",
+      "count": 24
+    },
+    {
+      "_id": "GM04",
+      "count": 354
+    },
+    {
+      "_id": "Get REAL",
+      "count": 7
+    },
+    {
+      "_id": "Growing Community Assets",
+      "count": 123
+    },
+    {
+      "_id": "Healthy Living Centres",
+      "count": 1
+    },
+    {
+      "_id": "Healthy Minds NI",
+      "count": 116
+    },
+    {
+      "_id": "Help Through Crisis",
+      "count": 71
+    },
+    {
+      "_id": "Heroes Return",
+      "count": 20154
+    },
+    {
+      "_id": "Home Front Recall",
+      "count": 3286
+    },
+    {
+      "_id": "Hothouse Small Grants",
+      "count": 56
+    },
+    {
+      "_id": "Ideas into Action",
+      "count": 7
+    },
+    {
+      "_id": "Impact of Alcohol",
+      "count": 9
+    },
+    {
+      "_id": "Impact of Alcohol NI Wide",
+      "count": 12
+    },
+    {
+      "_id": "Improving Community Buildings",
+      "count": 52
+    },
+    {
+      "_id": "Improving Financial Confidence",
+      "count": 40
+    },
+    {
+      "_id": "Improving Futures",
+      "count": 54
+    },
+    {
+      "_id": "Integrated Children's Centres Wales",
+      "count": 12
+    },
+    {
+      "_id": "International",
+      "count": 18
+    },
+    {
+      "_id": "International Communities",
+      "count": 262
+    },
+    {
+      "_id": "International Grants",
+      "count": 275
+    },
+    {
+      "_id": "Investing in Communities",
+      "count": 1374
+    },
+    {
+      "_id": "Investing in Ideas",
+      "count": 1484
+    },
+    {
+      "_id": "Jubilee People's Millions",
+      "count": 63
+    },
+    {
+      "_id": "Large Grants Scotland",
+      "count": 63
+    },
+    {
+      "_id": "Large Projects",
+      "count": 2358
+    },
+    {
+      "_id": "Life Skills",
+      "count": 22
+    },
+    {
+      "_id": "Live and Learn",
+      "count": 40
+    },
+    {
+      "_id": "Living Landmarks",
+      "count": 28
+    },
+    {
+      "_id": "Make it Happen",
+      "count": 199
+    },
+    {
+      "_id": "Medium Grants Scotland",
+      "count": 290
+    },
+    {
+      "_id": "Medium Sized Projects",
+      "count": 659
+    },
+    {
+      "_id": "Mental Health Matters",
+      "count": 19
+    },
+    {
+      "_id": "Mentro Allan",
+      "count": 16
+    },
+    {
+      "_id": "Micro Grants",
+      "count": 190
+    },
+    {
+      "_id": "Millennium Commission",
+      "count": 55
+    },
+    {
+      "_id": "Millennium Now",
+      "count": 9
+    },
+    {
+      "_id": "Multiple Needs - Partnership Funding",
+      "count": 15
+    },
+    {
+      "_id": "NOPES Activities Programme Scotland",
+      "count": 1
+    },
+    {
+      "_id": "National Lottery Awards for All",
+      "count": 1582
+    },
+    {
+      "_id": "New Opportunities for PE and Sport",
+      "count": 1338
+    },
+    {
+      "_id": "New Opportunities for Quality Childcare",
+      "count": 211
+    },
+    {
+      "_id": "Next Steps",
+      "count": 14
+    },
+    {
+      "_id": "OSHL School Sport Co-ordinator",
+      "count": 304
+    },
+    {
+      "_id": "OSHL Summer Schools",
+      "count": 1
+    },
+    {
+      "_id": "Our Environment Our Future",
+      "count": 2
+    },
+    {
+      "_id": "Our Place",
+      "count": 85
+    },
+    {
+      "_id": "Out of School Hours Childcare",
+      "count": 55
+    },
+    {
+      "_id": "Palliative Care",
+      "count": 1
+    },
+    {
+      "_id": "Palliative Care: Wales",
+      "count": 1
+    },
+    {
+      "_id": "Parks for People",
+      "count": 47
+    },
+    {
+      "_id": "People and Communities",
+      "count": 47
+    },
+    {
+      "_id": "People and Places",
+      "count": 939
+    },
+    {
+      "_id": "Peoples Network",
+      "count": 1
+    },
+    {
+      "_id": "Reaching Communities",
+      "count": 6021
+    },
+    {
+      "_id": "Reaching Communities Buildings",
+      "count": 318
+    },
+    {
+      "_id": "Reaching Out - Connecting Older People",
+      "count": 67
+    },
+    {
+      "_id": "Reaching Out - Empowering Young People",
+      "count": 68
+    },
+    {
+      "_id": "Reaching Out: Supporting Families",
+      "count": 38
+    },
+    {
+      "_id": "Realising Ambition Portfolio",
+      "count": 2
+    },
+    {
+      "_id": "Renewable Energy",
+      "count": 9
+    },
+    {
+      "_id": "Research Grants",
+      "count": 156
+    },
+    {
+      "_id": "Rethink: Good Health",
+      "count": 3
+    },
+    {
+      "_id": "Safe and Well",
+      "count": 46
+    },
+    {
+      "_id": "Scotland Portfolio Partner",
+      "count": 1
+    },
+    {
+      "_id": "Single Grants",
+      "count": 252
+    },
+    {
+      "_id": "Space and Place",
+      "count": 1
+    },
+    {
+      "_id": "Stepping Stones",
+      "count": 8
+    },
+    {
+      "_id": "Talent Match",
+      "count": 24
+    },
+    {
+      "_id": "Talent Match - Partnership Funding",
+      "count": 21
+    },
+    {
+      "_id": "The People's Millions",
+      "count": 614
+    },
+    {
+      "_id": "The People's Projects",
+      "count": 214
+    },
+    {
+      "_id": "The Silver Dreams Fund",
+      "count": 47
+    },
+    {
+      "_id": "Their Past Your Future",
+      "count": 149
+    },
+    {
+      "_id": "Transfers of grants",
+      "count": 601
+    },
+    {
+      "_id": "Transforming Your Space",
+      "count": 1
+    },
+    {
+      "_id": "Trusts",
+      "count": 16
+    },
+    {
+      "_id": "UK Accelerating Ideas",
+      "count": 45
+    },
+    {
+      "_id": "Village SOS",
+      "count": 38
+    },
+    {
+      "_id": "Village SOS Active",
+      "count": 146
+    },
+    {
+      "_id": "Way of Life Programme",
+      "count": 14
+    },
+    {
+      "_id": "Well-being",
+      "count": 43
+    },
+    {
+      "_id": "Women and Girls Initiative",
+      "count": 99
+    },
+    {
+      "_id": "YPF and Reaching Out - Grants to Orgs",
+      "count": 484
+    },
+    {
+      "_id": "Young Peoples Fund",
+      "count": 435
+    },
+    {
+      "_id": "Young Peoples Fund - National Grants",
+      "count": 58
+    },
+    {
+      "_id": "Youth Investment Fund",
+      "count": 4
+    },
+    {
+      "_id": "iwill fund",
+      "count": 6
+    }
+  ]
+}
