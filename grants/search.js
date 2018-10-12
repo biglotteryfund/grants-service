@@ -2,6 +2,7 @@
 const { head, get } = require('lodash');
 const request = require('request-promise-native');
 const querystring = require('querystring');
+const moment = require('moment');
 
 /**
  * 360Giving organisation prefix
@@ -493,6 +494,7 @@ async function fetchFacets(collection, matchCriteria = {}, ) {
  * Fetch grants
  */
 async function fetchGrants(mongo, queryParams) {
+    const start = moment();
     const perPageCount =
         (queryParams.limit && parseInt(queryParams.limit)) || 50;
     const pageParam = queryParams.page && parseInt(queryParams.page);
@@ -583,9 +585,12 @@ async function fetchGrants(mongo, queryParams) {
     const currentSortDirection =
         sortCriteria[currentSortType] === 1 ? 'asc' : 'desc';
 
+    const end = moment();
+
     return {
         meta: {
             usingFacetCache: shouldUseCachedFacets,
+            timeToRenderMs: end.diff(start),
             totalResults: totalGrantsForQuery,
             totalAwarded: totalAwarded,
             query: queryParams,
