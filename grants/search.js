@@ -158,12 +158,19 @@ async function buildMatchCriteria(queryParams) {
      * Organisation type
      */
     if (queryParams.orgType) {
-        match.$and.push({
-            'recipientOrganization.organisationType': {
-                $regex: `^${queryParams.orgType}`,
-                $options: 'i'
-            }
-        });
+        match.$or.push(
+            {
+                'recipientOrganization.organisationType': {
+                    $regex: `^${queryParams.orgType}`,
+                    $options: 'i'
+                }
+            },
+            {
+                'recipientOrganization.organisationSubtype': {
+                    $regex: `^${queryParams.orgType}`,
+                    $options: 'i'
+                }
+            });
     }
 
     /**
