@@ -183,6 +183,16 @@ async function buildMatchCriteria(queryParams) {
         });
     }
 
+    if (queryParams.exclude) {
+        match.$and.push({
+            'id': {
+                $not: {
+                    $eq: `${ID_PREFIX}${queryParams.exclude}`
+                }
+            }
+        });
+    }
+
     /**
      * Search queries
      *
@@ -197,7 +207,7 @@ async function buildMatchCriteria(queryParams) {
      * @see https://docs.mongodb.com/manual/reference/operator/query/text/index.html
      */
     if (queryParams.q) {
-        if (queryParams.q.indexOf('"') === -1) {
+        if (queryParams.q.indexOf('"') === -1 && !queryParams.fuzzy) {
             queryParams.q = queryParams.q
                 .split(' ')
                 .map(term => {
