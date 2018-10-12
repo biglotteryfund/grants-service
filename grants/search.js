@@ -70,7 +70,12 @@ function numberWithCommas(str = '') {
  */
 function buildSortCriteria(queryParams) {
     let sortConf = { awardDate: -1 };
-    if (queryParams.sort) {
+    // @TODO improve this
+    if (queryParams.fuzzy) {
+        sortConf = {
+            'grantProgramme.title': 1,
+        }
+    } else if (queryParams.sort) {
         const [field, direction] = queryParams.sort.split('|');
         if (['awardDate', 'amountAwarded'].indexOf(field) !== -1) {
             const newSortConf = {};
@@ -108,6 +113,11 @@ async function buildMatchCriteria(queryParams) {
         awardDate: { $exists: true }
     });
 
+    let defaultMatch = '$and';
+    if (queryParams.fuzzy) {
+        defaultMatch = '$or';
+    }
+
     /**
      * Grant amount
      * Allow a min and max amount separated by a pipe.
@@ -116,7 +126,7 @@ async function buildMatchCriteria(queryParams) {
         const [minAmount, maxAmount] = queryParams.amount
             .split('|')
             .map(num => parseInt(num, 10));
-        match.$and.push({
+        match[defaultMatch].push({
             amountAwarded: { $gte: minAmount || 0, $lt: maxAmount || Infinity }
         });
     }
@@ -128,7 +138,7 @@ async function buildMatchCriteria(queryParams) {
         var start = new Date(queryParams.year, 0, 1);
         var end = new Date(queryParams.year, 11, 31);
 
-        match.$and.push({
+        match[defaultMatch].push({
             awardDate: { $gte: start, $lt: end }
         });
     }
@@ -137,7 +147,7 @@ async function buildMatchCriteria(queryParams) {
      * Programme title
      */
     if (queryParams.programme) {
-        match.$and.push({
+        match[defaultMatch].push({
             'grantProgramme.title': {
                 $eq: queryParams.programme
             }
@@ -160,7 +170,7 @@ async function buildMatchCriteria(queryParams) {
      * Local authority
      */
     if (queryParams.localAuthority) {
-        match.$and.push({
+        match[defaultMatch].push({
             'beneficiaryLocation.geoCode': queryParams.localAuthority
         });
     }
@@ -169,7 +179,7 @@ async function buildMatchCriteria(queryParams) {
      * Westminster Constituency
      */
     if (queryParams.constituency) {
-        match.$and.push({
+        match[defaultMatch].push({
             'beneficiaryLocation.geoCode': queryParams.constituency
         });
     }
@@ -178,7 +188,7 @@ async function buildMatchCriteria(queryParams) {
      * Recipient
      */
     if (queryParams.recipient) {
-        match.$and.push({
+        match[defaultMatch].push({
             'recipientOrganization.id': queryParams.recipient
         });
     }
@@ -268,7 +278,7 @@ async function buildMatchCriteria(queryParams) {
     const countryRegex =
         queryParams.country && COUNTRIES[queryParams.country];
     if (countryRegex) {
-        match.$and.push(
+        match[defaultMatch].push(
             { 'beneficiaryLocation.geoCode': { $regex: countryRegex.pattern } },
             { 'beneficiaryLocation.geoCodeType': GEOCODE_TYPES.localAuthority }
         );
