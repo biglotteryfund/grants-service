@@ -567,9 +567,13 @@ async function fetchGrants(mongo, queryParams) {
 
     const shouldUseCachedFacets = totalGrants === totalGrantsForQuery;
 
-    const facets = shouldUseCachedFacets ?
-        await mongo.facetsCollection.findOne() :
-        await fetchFacets(mongo.grantsCollection, matchCriteria);
+    let facets;
+
+    if (!queryParams.skipFacets) {
+        facets = shouldUseCachedFacets ?
+            await mongo.facetsCollection.findOne() :
+            await fetchFacets(mongo.grantsCollection, matchCriteria);
+    }
 
     /**
      * Pluck out the current sort type from the sort criteria
