@@ -53,8 +53,4 @@ router.route('/:id').get(async (req, res) => {
     }
 });
 
-router.route('/facets').get((req, res) => {
-    res.json(cachedFacets);
-});
-
 module.exports = router;

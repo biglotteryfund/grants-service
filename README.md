@@ -46,11 +46,9 @@ Once you've done this and have confirmed it works as expected, you can push the 
 
 5. Repeat the above step for the `PRODUCTION` environment.
 
-6. Update the cached facets, eg:
+6. Update the cached facets, eg: visit `/past-grants-search/build-facets`
 
-    `./scripts/store-facets`
-
-    This will generate an updated JSON file with pre-calculated facets (to speed up the initial search without queries, and to use for comparisons on the frontend). You should commit this file.
+    This will store an JSON object with pre-calculated facets (to speed up the initial search without queries, and to use for comparisons on the frontend) in the environment's database.
 
 ## Misc / other
 
