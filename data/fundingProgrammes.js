@@ -39,10 +39,10 @@ module.exports = {
   "Arrangements": {
     "_id": "Arrangements"
   },
-  // "Awards for All": {
-  //   "_id": "Awards for All",
-  //   "urlPath": "national-lottery-awards-for-all-england"
-  // },
+  "Awards for All": {
+    "_id": "Awards for All",
+    "urlPath": "national-lottery-awards-for-all-england"
+  },
   "Awards for All Northern Ireland": {
     "_id": "Awards for All Northern Ireland",
     "urlPath": "/global-content/programmes/northern-ireland/awards-for-all-northern-ireland"
