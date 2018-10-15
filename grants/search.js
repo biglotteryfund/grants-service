@@ -71,12 +71,7 @@ function numberWithCommas(str = '') {
  */
 function buildSortCriteria(queryParams) {
     let sortConf = { awardDate: -1 };
-    // @TODO improve this
-    if (queryParams.fuzzy) {
-        sortConf = {
-            'grantProgramme.title': 1,
-        }
-    } else if (queryParams.sort) {
+    if (queryParams.sort) {
         const [field, direction] = queryParams.sort.split('|');
         if (['awardDate', 'amountAwarded'].indexOf(field) !== -1) {
             const newSortConf = {};
@@ -113,12 +108,6 @@ async function buildMatchCriteria(queryParams) {
     match.$and.push({
         awardDate: { $exists: true }
     });
-
-    let defaultMatch = '$and';
-    if (queryParams.fuzzy) {
-        defaultMatch = '$or';
-    }
-
     /**
      * Grant amount
      * Allow a min and max amount separated by a pipe.
@@ -127,7 +116,7 @@ async function buildMatchCriteria(queryParams) {
         const [minAmount, maxAmount] = queryParams.amount
             .split('|')
             .map(num => parseInt(num, 10));
-        match[defaultMatch].push({
+        match.$and.push({
             amountAwarded: { $gte: minAmount || 0, $lt: maxAmount || Infinity }
         });
     }
@@ -139,7 +128,7 @@ async function buildMatchCriteria(queryParams) {
         var start = new Date(queryParams.year, 0, 1);
         var end = new Date(queryParams.year, 11, 31);
 
-        match[defaultMatch].push({
+        match.$and.push({
             awardDate: { $gte: start, $lt: end }
         });
     }
@@ -148,7 +137,7 @@ async function buildMatchCriteria(queryParams) {
      * Programme title
      */
     if (queryParams.programme) {
-        match[defaultMatch].push({
+        match.$and.push({
             'grantProgramme.title': {
                 $eq: queryParams.programme
             }
@@ -178,7 +167,7 @@ async function buildMatchCriteria(queryParams) {
      * Local authority
      */
     if (queryParams.localAuthority) {
-        match[defaultMatch].push({
+        match.$and.push({
             'beneficiaryLocation.geoCode': queryParams.localAuthority
         });
     }
@@ -187,7 +176,7 @@ async function buildMatchCriteria(queryParams) {
      * Westminster Constituency
      */
     if (queryParams.constituency) {
-        match[defaultMatch].push({
+        match.$and.push({
             'beneficiaryLocation.geoCode': queryParams.constituency
         });
     }
@@ -196,7 +185,7 @@ async function buildMatchCriteria(queryParams) {
      * Recipient
      */
     if (queryParams.recipient) {
-        match[defaultMatch].push({
+        match.$and.push({
             'recipientOrganization.id': queryParams.recipient
         });
     }
@@ -205,7 +194,7 @@ async function buildMatchCriteria(queryParams) {
         match.$and.push({
             'id': {
                 $not: {
-                    $eq: `${ID_PREFIX}${queryParams.exclude}`
+                    $eq: queryParams.exclude
                 }
             }
         });
@@ -225,7 +214,7 @@ async function buildMatchCriteria(queryParams) {
      * @see https://docs.mongodb.com/manual/reference/operator/query/text/index.html
      */
     if (queryParams.q) {
-        if (queryParams.q.indexOf('"') === -1 && !queryParams.fuzzy) {
+        if (queryParams.q.indexOf('"') === -1 && !queryParams.related) {
             queryParams.q = queryParams.q
                 .split(' ')
                 .map(term => {
@@ -286,7 +275,7 @@ async function buildMatchCriteria(queryParams) {
     const countryRegex =
         queryParams.country && COUNTRIES[queryParams.country];
     if (countryRegex) {
-        match[defaultMatch].push(
+        match.$and.push(
             { 'beneficiaryLocation.geoCode': { $regex: countryRegex.pattern } },
             { 'beneficiaryLocation.geoCodeType': GEOCODE_TYPES.localAuthority }
         );
@@ -571,7 +560,7 @@ async function fetchGrants(mongo, queryParams) {
 
     let facets;
 
-    if (!queryParams.skipFacets) {
+    if (!queryParams.related) {
         facets = shouldUseCachedFacets ?
             await mongo.facetsCollection.findOne() :
             await fetchFacets(mongo.grantsCollection, matchCriteria);
