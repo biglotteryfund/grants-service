@@ -7,6 +7,8 @@ const _ = require('lodash');
 const split = require('split');
 
 const wardLocations = require('../data/ward-locations');
+const fundingProgrammes = require('../data/fundingProgrammes');
+const knownProgrammes = Object.keys(fundingProgrammes);
 
 const argv = require('yargs')
     .alias('f', 'file')
@@ -193,6 +195,16 @@ const addLocations = data => {
     return data;
 };
 
+// Check to see if we need to add a new programme mapping
+const unknownProgrammes = [];
+const checkForNewProgrammes = data => {
+    const mainProgramme = data.grantProgramme[0];
+    if (mainProgramme && knownProgrammes.indexOf(mainProgramme.title) === -1) {
+        unknownProgrammes.push(mainProgramme.title);
+    }
+    return data;
+};
+
 const outputFileStream = fs.createWriteStream(argv.o, { flags:'a' });
 
 const getStream = function () {
@@ -209,11 +221,25 @@ getStream().pipe(es.mapSync((data) => {
         .map(rename)
         .map(fixHeroesReturnTypo)
         .map(fixEncodingIssues)
-        .map(addLocations);
+        .map(addLocations)
+        .map(checkForNewProgrammes);
     outputFileStream.write(JSON.stringify(cleaned[0], null, 4) + '\n');
 }).on('error', function (err) {
     console.log('Error parsing JSON', err);
 }).on('end', () => {
     console.log('Finished cleaning JSON - file written successfully.');
+    if (unknownProgrammes.length > 0) {
+        console.log('=================');
+        console.log('Some unknown programmes were included in this import.');
+        console.log('You should add the following items to /data/fundingProgrammes.js');
+        _.uniq(unknownProgrammes).forEach(programme => {
+            let data = {};
+            data[programme] = {
+                "_id": programme,
+                "urlPath": "/relative/url/goes/here"
+            };
+            console.log(JSON.stringify(data, null, 4));
+        });
+    }
     outputFileStream.end();
 }));

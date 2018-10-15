@@ -4,6 +4,8 @@ const request = require('request-promise-native');
 const querystring = require('querystring');
 const moment = require('moment');
 
+const fundingProgrammes = require('../data/fundingProgrammes');
+
 /**
  * 360Giving organisation prefix
  * We don't want to expose this in public urls
@@ -66,6 +68,17 @@ function addActiveStatus(grant) {
     const endDate = get(grant, 'plannedDates[0].endDate', false);
     const endsBeforeNow = moment(endDate).isBefore(moment());
     grant.isActive = endDate ? !endsBeforeNow : false;
+    return grant;
+}
+
+function addFundingProgrammeDetail(grant) {
+    const mainProgramme = grant.grantProgramme[0];
+    if (mainProgramme) {
+        const programme = get(fundingProgrammes, mainProgramme.title, false);
+        if (programme && programme.urlPath) {
+            mainProgramme.url = programme.urlPath;
+        }
+    }
     return grant;
 }
 
@@ -486,6 +499,12 @@ async function fetchFacets(collection, matchCriteria = {}, ) {
     return facets;
 }
 
+function addGrantDetails(grantsResult) {
+    return grantsResult
+        .map(addActiveStatus)
+        .map(addFundingProgrammeDetail);
+}
+
 /**
  * Fetch grants
  */
@@ -564,7 +583,7 @@ async function fetchGrants(mongo, queryParams) {
         .toArray();
 
     // Add any final fields we need before output
-    grantsResult = grantsResult.map(addActiveStatus);
+    grantsResult = addGrantDetails(grantsResult);
 
     const shouldUseCachedFacets = totalGrants === totalGrantsForQuery;
     let facets;
@@ -634,7 +653,8 @@ async function fetchGrantById(collection, id) {
     let grant = await collection.findOne({
         id: `${ID_PREFIX}${id}`
     });
-    return addActiveStatus(grant);
+    // Make it into an array for cleanup then return the first item
+    return head(addGrantDetails([grant]));
 }
 
 module.exports = {
