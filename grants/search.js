@@ -62,6 +62,13 @@ function numberWithCommas(str = '') {
     return n.toLocaleString();
 }
 
+function addActiveStatus(grant) {
+    const endDate = get(grant, 'plannedDates[0].endDate', false);
+    const endsBeforeNow = moment(endDate).isBefore(moment());
+    grant.isActive = endDate ? !endsBeforeNow : false;
+    return grant;
+}
+
 /**
  * Build sort criteria
  * 1. Default to awardDate (newest first)
@@ -550,14 +557,16 @@ async function fetchGrants(mongo, queryParams) {
     /**
      * Perform query for grant results
      */
-    const grantsResult = await mongo.grantsCollection
+    let grantsResult = await mongo.grantsCollection
         .aggregate(resultsPipeline, { allowDiskUse: true })
         .skip(skipCount)
         .limit(perPageCount)
         .toArray();
 
-    const shouldUseCachedFacets = totalGrants === totalGrantsForQuery;
+    // Add any final fields we need before output
+    grantsResult = grantsResult.map(addActiveStatus);
 
+    const shouldUseCachedFacets = totalGrants === totalGrantsForQuery;
     let facets;
 
     if (!queryParams.related) {
@@ -621,10 +630,11 @@ async function fetchGrants(mongo, queryParams) {
  * We don't want to expose this in public urls
  * so we prepend this when doing lookups
  */
-function fetchGrantById(collection, id) {
-    return collection.findOne({
+async function fetchGrantById(collection, id) {
+    let grant = await collection.findOne({
         id: `${ID_PREFIX}${id}`
     });
+    return addActiveStatus(grant);
 }
 
 module.exports = {
