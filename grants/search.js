@@ -579,7 +579,7 @@ async function fetchGrants(mongo, queryParams) {
     return {
         meta: {
             usingFacetCache: shouldUseCachedFacets,
-            timeToRenderMs: end.diff(start),
+            timeToRenderMs: queryParams.perf ? end.diff(start) : null,
             totalResults: totalGrantsForQuery,
             totalAwarded: totalAwarded,
             query: queryParams,
