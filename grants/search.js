@@ -301,7 +301,8 @@ function buildLocationFacet(geoCodeType) {
                 count: { $sum: 1 }
             }
         },
-        { $sort: { _id: 1 } }
+        { $sort: { _id: 1 } },
+        { $project: { label: "$_id", value: "$code", count: 1 } }
     ];
 }
 
@@ -325,7 +326,7 @@ function buildFacetCriteria() {
                             cond: { $eq: ['$$location.geoCodeType', GEOCODE_TYPES.localAuthority] }
                         }
                     }
-                }
+                },
             },
             {
                 $group: {
@@ -351,7 +352,7 @@ function buildFacetCriteria() {
                         count: { $sum: 1 }
                     }
                 }
-            },
+            }
         ],
 
         localAuthorities: buildLocationFacet(GEOCODE_TYPES.localAuthority),
@@ -363,7 +364,8 @@ function buildFacetCriteria() {
                     count: { $sum: 1 }
                 }
             },
-            { $sort: { _id: -1 } }
+            { $sort: { _id: -1 } },
+            { $project: { count: 1, label: "$_id", value: "$_id" } }
         ],
         grantProgramme: [
             {
@@ -372,7 +374,8 @@ function buildFacetCriteria() {
                     count: { $sum: 1 }
                 }
             },
-            { $sort: { _id: 1 } }
+            { $sort: { _id: 1 } },
+            { $project: { count: 1, label: "$_id", value: "$_id" } }
         ],
         orgType: [
             {
@@ -386,7 +389,8 @@ function buildFacetCriteria() {
                     count: { $sum: 1 }
                 }
             },
-            { $sort: { _id: 1 } }
+            { $sort: { _id: 1 } },
+            { $project: { count: 1, label: "$_id", value: "$_id" } }
         ]
     };
 }
@@ -419,16 +423,16 @@ async function fetchFacets(collection, matchCriteria = {}, ) {
             upperBound = undefined;
         }
 
-        // Build a title string
-        let title;
+        let label;
         if (lowerBound === 0 && upperBound) {
-            title = `Under £${numberWithCommas(upperBound)}`;
+            label = `Under £${numberWithCommas(upperBound)}`;
         } else if (!upperBound) {
-            title = `£${numberWithCommas(lowerBound)}+`;
+            label = `£${numberWithCommas(lowerBound)}+`;
         } else {
-            title = `£${numberWithCommas(lowerBound)}–£${numberWithCommas(upperBound)}`;
+            label = `£${numberWithCommas(lowerBound)}–£${numberWithCommas(upperBound)}`;
         }
-        amount.title = title;
+
+        amount.label = label;
 
         // Construct a value string for the filter parameter
         amount.value = lowerBound;
@@ -447,13 +451,13 @@ async function fetchFacets(collection, matchCriteria = {}, ) {
             const country = COUNTRIES[countryKey];
             isValid = country.pattern.test(countryFacet._id);
             if (isValid) {
-                countryFacet.name = country.title;
+                countryFacet.label = country.title;
                 countryFacet.value = countryKey;
                 break;
             }
         }
         return countryFacet;
-    }).filter(c => !!c.name);
+    }).filter(c => !!c.label);
 
     // Strip out empty locations from missing geocodes
     facets.localAuthorities = facets.localAuthorities.filter(f => !!f._id);
