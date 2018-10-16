@@ -2,6 +2,9 @@
 const { head, get } = require('lodash');
 const request = require('request-promise-native');
 const querystring = require('querystring');
+const moment = require('moment');
+
+const fundingProgrammes = require('../data/fundingProgrammes');
 
 /**
  * 360Giving organisation prefix
@@ -61,6 +64,24 @@ function numberWithCommas(str = '') {
     return n.toLocaleString();
 }
 
+function addActiveStatus(grant) {
+    const endDate = get(grant, 'plannedDates[0].endDate', false);
+    const endsBeforeNow = moment(endDate).isBefore(moment());
+    grant.isActive = endDate ? !endsBeforeNow : false;
+    return grant;
+}
+
+function addFundingProgrammeDetail(grant) {
+    const mainProgramme = grant.grantProgramme[0];
+    if (mainProgramme) {
+        const programme = get(fundingProgrammes, mainProgramme.title, false);
+        if (programme && programme.urlPath) {
+            mainProgramme.url = programme.urlPath;
+        }
+    }
+    return grant;
+}
+
 /**
  * Build sort criteria
  * 1. Default to awardDate (newest first)
@@ -107,7 +128,6 @@ async function buildMatchCriteria(queryParams) {
     match.$and.push({
         awardDate: { $exists: true }
     });
-
     /**
      * Grant amount
      * Allow a min and max amount separated by a pipe.
@@ -148,12 +168,19 @@ async function buildMatchCriteria(queryParams) {
      * Organisation type
      */
     if (queryParams.orgType) {
-        match.$and.push({
-            'recipientOrganization.organisationType': {
-                $regex: `^${queryParams.orgType}`,
-                $options: 'i'
-            }
-        });
+        match.$or.push(
+            {
+                'recipientOrganization.organisationType': {
+                    $regex: `^${queryParams.orgType}`,
+                    $options: 'i'
+                }
+            },
+            {
+                'recipientOrganization.organisationSubtype': {
+                    $regex: `^${queryParams.orgType}`,
+                    $options: 'i'
+                }
+            });
     }
 
     /**
@@ -183,6 +210,16 @@ async function buildMatchCriteria(queryParams) {
         });
     }
 
+    if (queryParams.exclude) {
+        match.$and.push({
+            'id': {
+                $not: {
+                    $eq: queryParams.exclude
+                }
+            }
+        });
+    }
+
     /**
      * Search queries
      *
@@ -197,7 +234,7 @@ async function buildMatchCriteria(queryParams) {
      * @see https://docs.mongodb.com/manual/reference/operator/query/text/index.html
      */
     if (queryParams.q) {
-        if (queryParams.q.indexOf('"') === -1) {
+        if (queryParams.q.indexOf('"') === -1 && !queryParams.related) {
             queryParams.q = queryParams.q
                 .split(' ')
                 .map(term => {
@@ -466,10 +503,17 @@ async function fetchFacets(collection, matchCriteria = {}, ) {
     return facets;
 }
 
+function addGrantDetails(grantsResult) {
+    return grantsResult
+        .map(addActiveStatus)
+        .map(addFundingProgrammeDetail);
+}
+
 /**
  * Fetch grants
  */
 async function fetchGrants(mongo, queryParams) {
+    const start = moment();
     const perPageCount =
         (queryParams.limit && parseInt(queryParams.limit)) || 50;
     const pageParam = queryParams.page && parseInt(queryParams.page);
@@ -536,17 +580,23 @@ async function fetchGrants(mongo, queryParams) {
     /**
      * Perform query for grant results
      */
-    const grantsResult = await mongo.grantsCollection
+    let grantsResult = await mongo.grantsCollection
         .aggregate(resultsPipeline, { allowDiskUse: true })
         .skip(skipCount)
         .limit(perPageCount)
         .toArray();
 
-    const shouldUseCachedFacets = totalGrants === totalGrantsForQuery;
+    // Add any final fields we need before output
+    grantsResult = addGrantDetails(grantsResult);
 
-    const facets = shouldUseCachedFacets ?
-        await mongo.facetsCollection.findOne() :
-        await fetchFacets(mongo.grantsCollection, matchCriteria);
+    const shouldUseCachedFacets = totalGrants === totalGrantsForQuery;
+    let facets;
+
+    if (!queryParams.related) {
+        facets = shouldUseCachedFacets ?
+            await mongo.facetsCollection.findOne() :
+            await fetchFacets(mongo.grantsCollection, matchCriteria);
+    }
 
     /**
      * Pluck out the current sort type from the sort criteria
@@ -556,9 +606,12 @@ async function fetchGrants(mongo, queryParams) {
     const currentSortDirection =
         sortCriteria[currentSortType] === 1 ? 'asc' : 'desc';
 
+    const end = moment();
+
     return {
         meta: {
             usingFacetCache: shouldUseCachedFacets,
+            timeToRenderMs: queryParams.perf ? end.diff(start) : null,
             totalResults: totalGrantsForQuery,
             totalAwarded: totalAwarded,
             query: queryParams,
@@ -600,10 +653,12 @@ async function fetchGrants(mongo, queryParams) {
  * We don't want to expose this in public urls
  * so we prepend this when doing lookups
  */
-function fetchGrantById(collection, id) {
-    return collection.findOne({
+async function fetchGrantById(collection, id) {
+    let grant = await collection.findOne({
         id: `${ID_PREFIX}${id}`
     });
+    // Make it into an array for cleanup then return the first item
+    return head(addGrantDetails([grant]));
 }
 
 module.exports = {

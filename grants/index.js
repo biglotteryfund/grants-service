@@ -4,7 +4,6 @@ const router = express.Router();
 
 const { connectToMongo } = require('../lib/mongo');
 const { fetchGrants, fetchGrantById, fetchFacets } = require('./search');
-const cachedFacets = require('../data/facets');
 const { normaliseError } = require('./errors');
 
 router.route('/').get(async (req, res) => {
@@ -15,6 +14,22 @@ router.route('/').get(async (req, res) => {
         res.json(results);
     } catch (error) {
         const normalisedError = normaliseError(error);
+        res.status(normalisedError.status).json({
+            result: null,
+            error: normalisedError
+        });
+    }
+});
+
+router.route('/:id').get(async (req, res) => {
+    try {
+        const mongo = await connectToMongo();
+        const result = await fetchGrantById(mongo.grantsCollection, req.params.id);
+        mongo.client.close();
+        res.json({ result });
+    } catch (error) {
+        const normalisedError = normaliseError(error);
+        console.log(error);
         res.status(normalisedError.status).json({
             result: null,
             error: normalisedError
@@ -36,25 +51,6 @@ router.get('/build-facets', async (req, res) => {
             error: normalisedError
         });
     }
-});
-
-router.route('/:id').get(async (req, res) => {
-    try {
-        const mongo = await connectToMongo();
-        const result = await fetchGrantById(mongo.grantsCollection, req.params.id);
-        mongo.client.close();
-        res.json({ result });
-    } catch (error) {
-        const normalisedError = normaliseError(error);
-        res.status(normalisedError.status).json({
-            result: null,
-            error: normalisedError
-        });
-    }
-});
-
-router.route('/facets').get((req, res) => {
-    res.json(cachedFacets);
 });
 
 module.exports = router;
