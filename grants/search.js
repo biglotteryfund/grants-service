@@ -597,16 +597,21 @@ async function fetchGrants(mongo, queryParams) {
     grantsResult = grantsResult.map(addGrantDetail);
 
     const shouldUseCachedFacets = totalGrants === totalGrantsForQuery;
+
     let facets;
 
     if (!queryParams.related) {
-        facets = shouldUseCachedFacets
-            ? await mongo.facetsCollection
-                  .find()
-                  .limit(1)
-                  .sort({ $natural: -1 })
-                  .toArray()
-            : await fetchFacets(mongo.grantsCollection, matchCriteria);
+        if (shouldUseCachedFacets && !queryParams.related) {
+            const cachedFacets = await mongo.facetsCollection
+                .find()
+                .limit(1)
+                .sort({ $natural: -1 })
+                .toArray();
+
+            facets = head(cachedFacets);
+        } else {
+            facets = await fetchFacets(mongo.grantsCollection, matchCriteria);
+        }
     }
 
     /**
