@@ -445,6 +445,9 @@ async function fetchFacets(collection, matchCriteria = {}) {
     });
 
 
+    // Clean up orgTypes
+    facets.orgType = facets.orgType.filter(f => !!f._id);
+
     // Strip out empty locations from missing geocodes
     facets.countries = facets.countries.filter(f => !!f._id);
     facets.localAuthorities = facets.localAuthorities.filter(f => !!f._id);

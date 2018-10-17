@@ -187,6 +187,7 @@ const fixEncodingIssues = data => {
         [/â€“/g, "–"],
         [/â€¦/g, "…"],
         [/â€œ/g, '"'],
+        [/Â£/g, '£'],
         [/â€/g, '"'], // must come last, otherwise too general
     ];
     encodingFixes.forEach(pair => {
