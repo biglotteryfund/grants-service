@@ -28,8 +28,8 @@ router.route('/:id').get(async (req, res) => {
         mongo.client.close();
         res.json({ result });
     } catch (error) {
-        const normalisedError = normaliseError(error);
         console.log(error);
+        const normalisedError = normaliseError(error);
         res.status(normalisedError.status).json({
             result: null,
             error: normalisedError
@@ -45,6 +45,7 @@ router.get('/build-facets', async (req, res) => {
         mongo.client.close();
         res.json(results);
     } catch (error) {
+        console.log(error);
         const normalisedError = normaliseError(error);
         res.status(normalisedError.status).json({
             result: null,
