@@ -19,24 +19,6 @@ const ID_PREFIX = '360G-blf-';
  * geocodes start with a letter prefix denoting the country
  * we use this to do country lookups.
  */
-const COUNTRIES = {
-    england: {
-        pattern: /^E/,
-        title: 'England'
-    },
-    wales: {
-        pattern: /^W/,
-        title: 'Wales'
-    },
-    scotland: {
-        pattern: /^S/,
-        title: 'Scotland'
-    },
-    'northern-ireland': {
-        pattern: /^N/,
-        title: 'Northern Ireland'
-    }
-};
 
 // The type of geocode
 // Source: https://github.com/ThreeSixtyGiving/standard/blob/master/codelists/geoCodeType.csv
@@ -287,11 +269,10 @@ async function buildMatchCriteria(queryParams) {
     /**
      * Country
      */
-    const countryRegex = queryParams.country && COUNTRIES[queryParams.country];
-    if (countryRegex) {
+    const validCountries = ['England', 'Northern Ireland', 'Scotland', 'Wales'];
+    if (queryParams.country && validCountries.indexOf(queryParams.country) !== -1) {
         match.$and.push(
-            { 'beneficiaryLocation.geoCode': { $regex: countryRegex.pattern } },
-            { 'beneficiaryLocation.geoCodeType': GEOCODE_TYPES.localAuthority }
+            { 'beneficiaryLocation.country': queryParams.country },
         );
     }
 
@@ -348,34 +329,13 @@ function buildFacetCriteria() {
     return {
         countries: [
             {
-                $project: {
-                    items: {
-                        $filter: {
-                            input: '$beneficiaryLocation',
-                            as: 'location',
-                            cond: {
-                                $eq: [
-                                    '$$location.geoCodeType',
-                                    GEOCODE_TYPES.localAuthority
-                                ]
-                            }
-                        }
-                    }
-                }
-            },
-            {
                 $group: {
-                    _id: {
-                        $substrBytes: [
-                            { $arrayElemAt: ['$items.geoCode', 0] },
-                            0,
-                            1
-                        ]
-                    },
+                    _id: { $arrayElemAt: ['$beneficiaryLocation.country', 0] },
                     count: { $sum: 1 }
                 }
             },
-            { $sort: { _id: 1 } }
+            { $sort: { _id: 1 } },
+            { $project: { count: 1, label: '$_id', value: '$_id' } }
         ],
 
         amountAwarded: [
@@ -485,25 +445,9 @@ async function fetchFacets(collection, matchCriteria = {}) {
         return amount;
     });
 
-    // Enhance country facet by adding in the proper name
-    // and filtering out any non-standard ones (eg. the country "9")
-    facets.countries = facets.countries
-        .map(countryFacet => {
-            let isValid = false;
-            for (let countryKey in COUNTRIES) {
-                const country = COUNTRIES[countryKey];
-                isValid = country.pattern.test(countryFacet._id);
-                if (isValid) {
-                    countryFacet.label = country.title;
-                    countryFacet.value = countryKey;
-                    break;
-                }
-            }
-            return countryFacet;
-        })
-        .filter(c => !!c.label);
 
     // Strip out empty locations from missing geocodes
+    facets.countries = facets.countries.filter(f => !!f._id);
     facets.localAuthorities = facets.localAuthorities.filter(f => !!f._id);
     facets.westminsterConstituencies = facets.westminsterConstituencies.filter(
         f => !!f._id
