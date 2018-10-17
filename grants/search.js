@@ -601,7 +601,11 @@ async function fetchGrants(mongo, queryParams) {
 
     if (!queryParams.related) {
         facets = shouldUseCachedFacets
-            ? await mongo.facetsCollection.findOne()
+            ? await mongo.facetsCollection
+                  .find()
+                  .limit(1)
+                  .sort({ $natural: -1 })
+                  .toArray()
             : await fetchFacets(mongo.grantsCollection, matchCriteria);
     }
 

@@ -13,6 +13,7 @@ router.route('/').get(async (req, res) => {
         mongo.client.close();
         res.json(results);
     } catch (error) {
+        console.log(error);
         const normalisedError = normaliseError(error);
         res.status(normalisedError.status).json({
             result: null,
