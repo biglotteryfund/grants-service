@@ -38,8 +38,7 @@ function addActiveStatus(grant) {
     const endDate = get(grant, 'plannedDates[0].endDate', false);
 
     if (endDate) {
-        const endsBeforeNow = moment(endDate).isBefore(moment());
-        grant.isActive = endsBeforeNow;
+        grant.isActive = !moment(endDate).isBefore(moment());
     }
 
     return grant;
