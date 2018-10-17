@@ -33,7 +33,8 @@ describe('Past Grants Search', () => {
     });
 
     // Convenience method for querying directly without passing a collection
-    const queryGrants = async query => fetchGrants({grantsCollection, facetsCollection}, query);
+    const queryGrants = async query =>
+        fetchGrants({ grantsCollection, facetsCollection }, query);
 
     it('should find grants by text search', async () => {
         const grants = await queryGrants({

@@ -21,12 +21,15 @@ router.route('/').get(async (req, res) => {
     }
 });
 
-router.route('/:id').get(async (req, res) => {
+router.get('/build-facets', async (req, res) => {
     try {
         const mongo = await connectToMongo();
-        const result = await fetchGrantById(mongo.grantsCollection, req.params.id);
+        const results = await fetchFacets(mongo.grantsCollection, {
+            awardDate: { $exists: true }
+        });
+        await mongo.facetsCollection.insertOne(results);
         mongo.client.close();
-        res.json({ result });
+        res.json(results);
     } catch (error) {
         console.log(error);
         const normalisedError = normaliseError(error);
@@ -37,13 +40,15 @@ router.route('/:id').get(async (req, res) => {
     }
 });
 
-router.get('/build-facets', async (req, res) => {
+router.route('/:id').get(async (req, res) => {
     try {
         const mongo = await connectToMongo();
-        const results = await fetchFacets(mongo.grantsCollection, { awardDate: { $exists: true } });
-        await mongo.facetsCollection.insertOne(results);
+        const result = await fetchGrantById(
+            mongo.grantsCollection,
+            req.params.id
+        );
         mongo.client.close();
-        res.json(results);
+        res.json({ result });
     } catch (error) {
         console.log(error);
         const normalisedError = normaliseError(error);
