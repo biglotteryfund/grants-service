@@ -595,11 +595,9 @@ async function fetchGrants(mongo, queryParams) {
     // Add any final fields we need before output
     grantsResult = grantsResult.map(addGrantDetail);
 
-    const shouldUseCachedFacets = totalGrants === totalGrantsForQuery;
-
     let facets;
-
     if (!queryParams.related) {
+        const shouldUseCachedFacets = totalGrants === totalGrantsForQuery;
         if (shouldUseCachedFacets && !queryParams.related) {
             const cachedFacets = await mongo.facetsCollection
                 .find()
@@ -623,7 +621,6 @@ async function fetchGrants(mongo, queryParams) {
 
     return {
         meta: {
-            usingFacetCache: shouldUseCachedFacets,
             totalResults: totalGrantsForQuery,
             totalAwarded: totalAwarded,
             query: queryParams,
