@@ -24,7 +24,9 @@ router.route('/').get(async (req, res) => {
 router.get('/build-facets', async (req, res) => {
     try {
         const mongo = await connectToMongo();
-        const results = await fetchFacets(mongo.grantsCollection, { awardDate: { $exists: true } });
+        const results = await fetchFacets(mongo.grantsCollection, {
+            awardDate: { $exists: true }
+        });
         await mongo.facetsCollection.insertOne(results);
         mongo.client.close();
         res.json(results);
@@ -41,7 +43,10 @@ router.get('/build-facets', async (req, res) => {
 router.route('/:id').get(async (req, res) => {
     try {
         const mongo = await connectToMongo();
-        const result = await fetchGrantById(mongo.grantsCollection, req.params.id);
+        const result = await fetchGrantById(
+            mongo.grantsCollection,
+            req.params.id
+        );
         mongo.client.close();
         res.json({ result });
     } catch (error) {
@@ -53,6 +58,5 @@ router.route('/:id').get(async (req, res) => {
         });
     }
 });
-
 
 module.exports = router;

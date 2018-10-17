@@ -46,7 +46,10 @@ const GEOCODE_TYPES = {
 };
 
 function addGrantDetail(grant) {
-    return flow(addActiveStatus, addFundingProgrammeDetail)(grant);
+    return flow(
+        addActiveStatus,
+        addFundingProgrammeDetail
+    )(grant);
 }
 
 function addActiveStatus(grant) {
@@ -169,7 +172,8 @@ async function buildMatchCriteria(queryParams) {
                     $regex: `^${queryParams.orgType}`,
                     $options: 'i'
                 }
-            });
+            }
+        );
     }
 
     /**
@@ -201,7 +205,7 @@ async function buildMatchCriteria(queryParams) {
 
     if (queryParams.exclude) {
         match.$and.push({
-            'id': {
+            id: {
                 $not: {
                     $eq: queryParams.exclude
                 }
@@ -248,7 +252,9 @@ async function buildMatchCriteria(queryParams) {
             const postcodeData = await request({
                 json: true,
                 method: 'GET',
-                url: `https://api.postcodes.io/postcodes?q=${queryParams.postcode}`,
+                url: `https://api.postcodes.io/postcodes?q=${
+                    queryParams.postcode
+                }`,
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -281,8 +287,7 @@ async function buildMatchCriteria(queryParams) {
     /**
      * Country
      */
-    const countryRegex =
-        queryParams.country && COUNTRIES[queryParams.country];
+    const countryRegex = queryParams.country && COUNTRIES[queryParams.country];
     if (countryRegex) {
         match.$and.push(
             { 'beneficiaryLocation.geoCode': { $regex: countryRegex.pattern } },
@@ -328,7 +333,7 @@ function buildLocationFacet(geoCodeType) {
             }
         },
         { $sort: { _id: 1 } },
-        { $project: { label: "$_id", value: "$code", count: 1 } }
+        { $project: { label: '$_id', value: '$code', count: 1 } }
     ];
 }
 
@@ -341,7 +346,6 @@ const AMOUNT_AWARDED_BUCKETS = [0, 10000, 50000, 100000, 1000000, Infinity];
 
 function buildFacetCriteria() {
     return {
-
         countries: [
             {
                 $project: {
@@ -349,10 +353,15 @@ function buildFacetCriteria() {
                         $filter: {
                             input: '$beneficiaryLocation',
                             as: 'location',
-                            cond: { $eq: ['$$location.geoCodeType', GEOCODE_TYPES.localAuthority] }
+                            cond: {
+                                $eq: [
+                                    '$$location.geoCodeType',
+                                    GEOCODE_TYPES.localAuthority
+                                ]
+                            }
                         }
                     }
-                },
+                }
             },
             {
                 $group: {
@@ -382,7 +391,9 @@ function buildFacetCriteria() {
         ],
 
         localAuthorities: buildLocationFacet(GEOCODE_TYPES.localAuthority),
-        westminsterConstituencies: buildLocationFacet(GEOCODE_TYPES.constituency),
+        westminsterConstituencies: buildLocationFacet(
+            GEOCODE_TYPES.constituency
+        ),
         awardDate: [
             {
                 $group: {
@@ -391,7 +402,7 @@ function buildFacetCriteria() {
                 }
             },
             { $sort: { _id: -1 } },
-            { $project: { count: 1, label: "$_id", value: "$_id" } }
+            { $project: { count: 1, label: '$_id', value: '$_id' } }
         ],
         grantProgramme: [
             {
@@ -401,7 +412,7 @@ function buildFacetCriteria() {
                 }
             },
             { $sort: { _id: 1 } },
-            { $project: { count: 1, label: "$_id", value: "$_id" } }
+            { $project: { count: 1, label: '$_id', value: '$_id' } }
         ],
         orgType: [
             {
@@ -416,12 +427,12 @@ function buildFacetCriteria() {
                 }
             },
             { $sort: { _id: 1 } },
-            { $project: { count: 1, label: "$_id", value: "$_id" } }
+            { $project: { count: 1, label: '$_id', value: '$_id' } }
         ]
     };
 }
 
-async function fetchFacets(collection, matchCriteria = {}, ) {
+async function fetchFacets(collection, matchCriteria = {}) {
     const facetCriteria = buildFacetCriteria();
 
     /**
@@ -442,7 +453,10 @@ async function fetchFacets(collection, matchCriteria = {}, ) {
     facets.amountAwarded = facets.amountAwarded.map(amount => {
         // Try to find the next bucket item after this one
         let lowerBound = amount._id;
-        let upperBound = AMOUNT_AWARDED_BUCKETS[AMOUNT_AWARDED_BUCKETS.indexOf(lowerBound) + 1];
+        let upperBound =
+            AMOUNT_AWARDED_BUCKETS[
+                AMOUNT_AWARDED_BUCKETS.indexOf(lowerBound) + 1
+            ];
 
         // We don't use Infinity in the UI so ignore it here
         if (upperBound === Infinity) {
@@ -455,7 +469,9 @@ async function fetchFacets(collection, matchCriteria = {}, ) {
         } else if (!upperBound) {
             label = `£${numberWithCommas(lowerBound)}+`;
         } else {
-            label = `£${numberWithCommas(lowerBound)}–£${numberWithCommas(upperBound)}`;
+            label = `£${numberWithCommas(lowerBound)}–£${numberWithCommas(
+                upperBound
+            )}`;
         }
 
         amount.label = label;
@@ -471,23 +487,27 @@ async function fetchFacets(collection, matchCriteria = {}, ) {
 
     // Enhance country facet by adding in the proper name
     // and filtering out any non-standard ones (eg. the country "9")
-    facets.countries = facets.countries.map(countryFacet => {
-        let isValid = false;
-        for (let countryKey in COUNTRIES) {
-            const country = COUNTRIES[countryKey];
-            isValid = country.pattern.test(countryFacet._id);
-            if (isValid) {
-                countryFacet.label = country.title;
-                countryFacet.value = countryKey;
-                break;
+    facets.countries = facets.countries
+        .map(countryFacet => {
+            let isValid = false;
+            for (let countryKey in COUNTRIES) {
+                const country = COUNTRIES[countryKey];
+                isValid = country.pattern.test(countryFacet._id);
+                if (isValid) {
+                    countryFacet.label = country.title;
+                    countryFacet.value = countryKey;
+                    break;
+                }
             }
-        }
-        return countryFacet;
-    }).filter(c => !!c.label);
+            return countryFacet;
+        })
+        .filter(c => !!c.label);
 
     // Strip out empty locations from missing geocodes
     facets.localAuthorities = facets.localAuthorities.filter(f => !!f._id);
-    facets.westminsterConstituencies = facets.westminsterConstituencies.filter(f => !!f._id);
+    facets.westminsterConstituencies = facets.westminsterConstituencies.filter(
+        f => !!f._id
+    );
 
     return facets;
 }
@@ -552,12 +572,16 @@ async function fetchGrants(mongo, queryParams) {
      * Perform a separate (fast) count query to get the total results.
      */
     const totalGrants = await mongo.grantsCollection.find({}).count();
-    const totalGrantsForQuery = await mongo.grantsCollection.find(matchCriteria).count();
-    let totalAwarded = await mongo.grantsCollection.aggregate([
-        { $match: matchCriteria  },
-        { $group: { _id : null, sum : { $sum: "$amountAwarded" } } },
-        { $project: { _id: 0, sum: 1 } }
-    ]).toArray();
+    const totalGrantsForQuery = await mongo.grantsCollection
+        .find(matchCriteria)
+        .count();
+    let totalAwarded = await mongo.grantsCollection
+        .aggregate([
+            { $match: matchCriteria },
+            { $group: { _id: null, sum: { $sum: '$amountAwarded' } } },
+            { $project: { _id: 0, sum: 1 } }
+        ])
+        .toArray();
     totalAwarded = get(totalAwarded, '[0].sum', false);
 
     /**
@@ -576,9 +600,9 @@ async function fetchGrants(mongo, queryParams) {
     let facets;
 
     if (!queryParams.related) {
-        facets = shouldUseCachedFacets ?
-            await mongo.facetsCollection.findOne() :
-            await fetchFacets(mongo.grantsCollection, matchCriteria);
+        facets = shouldUseCachedFacets
+            ? await mongo.facetsCollection.findOne()
+            : await fetchFacets(mongo.grantsCollection, matchCriteria);
     }
 
     /**
@@ -609,17 +633,24 @@ async function fetchGrants(mongo, queryParams) {
                 totalPages: Math.ceil(totalGrantsForQuery / perPageCount),
                 get prevPageParams() {
                     if (this.totalPages > 1 && this.currentPage > 1) {
-                        return querystring.stringify(Object.assign({}, queryParams, {
-                            page: this.currentPage - 1
-                        }));
+                        return querystring.stringify(
+                            Object.assign({}, queryParams, {
+                                page: this.currentPage - 1
+                            })
+                        );
                     }
                     return undefined;
                 },
                 get nextPageParams() {
-                    if (this.totalPages > 1 && this.currentPage < this.totalPages) {
-                        return querystring.stringify(Object.assign({}, queryParams, {
-                            page: this.currentPage + 1
-                        }));
+                    if (
+                        this.totalPages > 1 &&
+                        this.currentPage < this.totalPages
+                    ) {
+                        return querystring.stringify(
+                            Object.assign({}, queryParams, {
+                                page: this.currentPage + 1
+                            })
+                        );
                     }
                     return undefined;
                 }

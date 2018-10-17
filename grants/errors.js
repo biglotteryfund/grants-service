@@ -36,7 +36,6 @@ function normaliseError(error) {
     return errorCode;
 }
 
-
 module.exports = {
     normaliseError
 };
