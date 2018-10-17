@@ -1,5 +1,5 @@
 'use strict';
-const { head, get } = require('lodash');
+const { flow, get, head } = require('lodash');
 const request = require('request-promise-native');
 const querystring = require('querystring');
 const moment = require('moment');
@@ -44,35 +44,23 @@ const GEOCODE_TYPES = {
     constituency: 'WPC'
 };
 
-/**
- * Is postcode?
- * Matches UK postcodes only
- * @see https://github.com/chriso/validator.js/blob/master/lib/isPostalCode.js#L54
- * @param {string} input
- */
-function isPostcode(input) {
-    return input && input.match(/(gir\s?0aa|[a-zA-Z]{1,2}\d[\da-zA-Z]?\s?(\d[a-zA-Z]{2})?)/);
-}
-
-/**
- * Turns a number into a localised count
- * eg. 123456 => 123,456
- * @param {string} str
- */
-function numberWithCommas(str = '') {
-    const n = parseFloat(str);
-    return n.toLocaleString();
+function addGrantDetail(grant) {
+    return flow(addActiveStatus, addFundingProgrammeDetail)(grant);
 }
 
 function addActiveStatus(grant) {
     const endDate = get(grant, 'plannedDates[0].endDate', false);
-    const endsBeforeNow = moment(endDate).isBefore(moment());
-    grant.isActive = endDate ? !endsBeforeNow : false;
+
+    if (endDate) {
+        const endsBeforeNow = moment(endDate).isBefore(moment());
+        grant.isActive = endsBeforeNow;
+    }
+
     return grant;
 }
 
 function addFundingProgrammeDetail(grant) {
-    const mainProgramme = grant.grantProgramme[0];
+    const mainProgramme = head(grant.grantProgramme);
     if (mainProgramme) {
         const programme = get(fundingProgrammes, mainProgramme.title, false);
         if (programme && programme.urlPath) {
@@ -503,12 +491,6 @@ async function fetchFacets(collection, matchCriteria = {}, ) {
     return facets;
 }
 
-function addGrantDetails(grantsResult) {
-    return grantsResult
-        .map(addActiveStatus)
-        .map(addFundingProgrammeDetail);
-}
-
 /**
  * Fetch grants
  */
@@ -587,7 +569,7 @@ async function fetchGrants(mongo, queryParams) {
         .toArray();
 
     // Add any final fields we need before output
-    grantsResult = addGrantDetails(grantsResult);
+    grantsResult = grantsResult.map(addGrantDetail);
 
     const shouldUseCachedFacets = totalGrants === totalGrantsForQuery;
     let facets;
@@ -654,11 +636,10 @@ async function fetchGrants(mongo, queryParams) {
  * so we prepend this when doing lookups
  */
 async function fetchGrantById(collection, id) {
-    let grant = await collection.findOne({
-        id: `${ID_PREFIX}${id}`
-    });
-    // Make it into an array for cleanup then return the first item
-    return head(addGrantDetails([grant]));
+    const fullID = `${ID_PREFIX}${id}`;
+    let result = await collection.findOne({ id: fullID });
+    result = result && addGrantDetail(result);
+    return result;
 }
 
 module.exports = {
