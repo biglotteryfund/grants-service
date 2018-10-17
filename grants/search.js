@@ -4,6 +4,7 @@ const request = require('request-promise-native');
 const querystring = require('querystring');
 const moment = require('moment');
 
+const { matchPostcode, numberWithCommas } = require('../lib/strings');
 const fundingProgrammes = require('../data/fundingProgrammes');
 
 /**
@@ -507,7 +508,7 @@ async function fetchGrants(mongo, queryParams) {
      * If we have a text query and it looks like a postcode then
      * override the query params to consider this a postcode lookup
      */
-    const postcodeSearch = isPostcode(queryParams.q);
+    const postcodeSearch = matchPostcode(queryParams.q);
     if (queryParams.q && postcodeSearch) {
         let postcode = postcodeSearch[0];
         queryParams.q = queryParams.q.replace(postcode, '');
