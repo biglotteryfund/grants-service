@@ -1,5 +1,5 @@
 'use strict';
-const { flow, get, head } = require('lodash');
+const { flow, get, head, groupBy } = require('lodash');
 const request = require('request-promise-native');
 const querystring = require('querystring');
 const moment = require('moment');
@@ -326,6 +326,7 @@ const AMOUNT_AWARDED_BUCKETS = [0, 10000, 50000, 100000, 1000000, Infinity];
 
 function buildFacetCriteria() {
     return {
+
         countries: [
             {
                 $group: {
@@ -350,9 +351,11 @@ function buildFacetCriteria() {
         ],
 
         localAuthorities: buildLocationFacet(GEOCODE_TYPES.localAuthority),
+
         westminsterConstituencies: buildLocationFacet(
             GEOCODE_TYPES.constituency
         ),
+
         awardDate: [
             {
                 $group: {
@@ -363,6 +366,7 @@ function buildFacetCriteria() {
             { $sort: { _id: -1 } },
             { $project: { count: 1, label: '$_id', value: '$_id' } }
         ],
+
         grantProgramme: [
             {
                 $group: {
@@ -373,21 +377,30 @@ function buildFacetCriteria() {
             { $sort: { _id: 1 } },
             { $project: { count: 1, label: '$_id', value: '$_id' } }
         ],
+
         orgType: [
             {
                 $group: {
                     _id: {
-                        $arrayElemAt: [
-                            '$recipientOrganization.organisationType',
-                            0
-                        ]
+                        type: {
+                            $arrayElemAt: [
+                                '$recipientOrganization.organisationType',
+                                0
+                            ]
+                        },
+                        subtype: {
+                            $arrayElemAt: [
+                                '$recipientOrganization.organisationSubtype',
+                                0
+                            ]
+                        },
                     },
-                    count: { $sum: 1 }
+                    count: { $sum: 1 },
                 }
             },
             { $sort: { _id: 1 } },
-            { $project: { count: 1, label: '$_id', value: '$_id' } }
-        ]
+            { $project: { count: 1, label: '$_id.type', value: '$_id.type' } }
+        ],
     };
 }
 
@@ -444,9 +457,29 @@ async function fetchFacets(collection, matchCriteria = {}) {
         return amount;
     });
 
-
-    // Clean up orgTypes
-    facets.orgType = facets.orgType.filter(f => !!f._id);
+    // Combine org types
+    let orgGroups = groupBy(facets.orgType, '_id.type');
+    for (let parentGroup in orgGroups) {
+        let total = 0;
+        orgGroups[parentGroup] = orgGroups[parentGroup].map(group => {
+            total += group.count;
+            const name = group._id.subtype;
+            return {
+                _id: name,
+                count: group.count,
+                label: name,
+                value: name
+            }
+        }).sort((a, b) => a.label > b.label);
+        // Add an overall count at the start
+        orgGroups[parentGroup].unshift({
+            _id: 'All',
+            count: total,
+            label: 'All',
+            value: parentGroup
+        });
+    }
+    facets.orgType = orgGroups;
 
     // Strip out empty locations from missing geocodes
     facets.countries = facets.countries.filter(f => !!f._id);
