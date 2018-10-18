@@ -598,7 +598,7 @@ async function fetchGrants(mongo, queryParams) {
     let facets;
     if (!queryParams.related) {
         const shouldUseCachedFacets = totalGrants === totalGrantsForQuery;
-        if (shouldUseCachedFacets && !queryParams.related) {
+        if (shouldUseCachedFacets) {
             const cachedFacets = await mongo.facetsCollection
                 .find()
                 .limit(1)
