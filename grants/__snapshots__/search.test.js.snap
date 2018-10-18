@@ -8,7 +8,7 @@ Object {
     "countries": Array [],
     "grantProgramme": Array [],
     "localAuthorities": Array [],
-    "orgType": Array [],
+    "orgType": Object {},
     "westminsterConstituencies": Array [],
   },
   "meta": Object {
