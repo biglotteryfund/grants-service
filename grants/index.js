@@ -1,16 +1,22 @@
 'use strict';
 const express = require('express');
-const router = express.Router();
+const timings = require('server-timings');
 
 const { connectToMongo } = require('../lib/mongo');
 const { fetchGrants, fetchGrantById, fetchFacets } = require('./search');
 const { normaliseError } = require('./errors');
 
+const router = express.Router();
+
+router.use(timings);
+
 router.route('/').get(async (req, res) => {
     try {
+        res.locals.timings.start('fetch-grants');
         const mongo = await connectToMongo();
         const results = await fetchGrants(mongo, req.query);
         mongo.client.close();
+        res.locals.timings.end('fetch-grants');
         res.json(results);
     } catch (error) {
         console.log(error);

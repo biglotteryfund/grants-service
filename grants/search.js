@@ -495,7 +495,6 @@ async function fetchFacets(collection, matchCriteria = {}) {
  * Fetch grants
  */
 async function fetchGrants(mongo, queryParams) {
-    const start = moment();
     const perPageCount =
         (queryParams.limit && parseInt(queryParams.limit)) || 50;
     const pageParam = queryParams.page && parseInt(queryParams.page);
@@ -575,12 +574,10 @@ async function fetchGrants(mongo, queryParams) {
     // Add any final fields we need before output
     grantsResult = grantsResult.map(addGrantDetail);
 
-    const shouldUseCachedFacets = totalGrants === totalGrantsForQuery;
-
     let facets;
-
     if (!queryParams.related) {
-        if (shouldUseCachedFacets && !queryParams.related) {
+        const shouldUseCachedFacets = totalGrants === totalGrantsForQuery;
+        if (shouldUseCachedFacets) {
             const cachedFacets = await mongo.facetsCollection
                 .find()
                 .limit(1)
@@ -601,12 +598,8 @@ async function fetchGrants(mongo, queryParams) {
     const currentSortDirection =
         sortCriteria[currentSortType] === 1 ? 'asc' : 'desc';
 
-    const end = moment();
-
     return {
         meta: {
-            usingFacetCache: shouldUseCachedFacets,
-            timeToRenderMs: queryParams.perf ? end.diff(start) : null,
             totalResults: totalGrantsForQuery,
             totalAwarded: totalAwarded,
             query: queryParams,
