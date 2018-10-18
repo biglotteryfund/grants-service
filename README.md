@@ -26,6 +26,9 @@ Run `npm start` and you should be able to hit `http://localhost:8888/past-grants
 
 ## Updating datasets
 
+![Data Pipeline](https://imgs.xkcd.com/comics/data_pipeline.png)
+
+
 When a new dataset is released, you'll need to first run the above script (`import-csv`) to append it to your existing database (or create a new one).
 
 Once you've done this and have confirmed it works as expected, you can push the updated dataset live:
