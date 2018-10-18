@@ -1,5 +1,5 @@
 'use strict';
-const { flow, get, head } = require('lodash');
+const { flow, get, head, groupBy } = require('lodash');
 const request = require('request-promise-native');
 const querystring = require('querystring');
 const moment = require('moment');
@@ -19,24 +19,6 @@ const ID_PREFIX = '360G-blf-';
  * geocodes start with a letter prefix denoting the country
  * we use this to do country lookups.
  */
-const COUNTRIES = {
-    england: {
-        pattern: /^E/,
-        title: 'England'
-    },
-    wales: {
-        pattern: /^W/,
-        title: 'Wales'
-    },
-    scotland: {
-        pattern: /^S/,
-        title: 'Scotland'
-    },
-    'northern-ireland': {
-        pattern: /^N/,
-        title: 'Northern Ireland'
-    }
-};
 
 // The type of geocode
 // Source: https://github.com/ThreeSixtyGiving/standard/blob/master/codelists/geoCodeType.csv
@@ -56,8 +38,7 @@ function addActiveStatus(grant) {
     const endDate = get(grant, 'plannedDates[0].endDate', false);
 
     if (endDate) {
-        const endsBeforeNow = moment(endDate).isBefore(moment());
-        grant.isActive = endsBeforeNow;
+        grant.isActive = !moment(endDate).isBefore(moment());
     }
 
     return grant;
@@ -287,11 +268,10 @@ async function buildMatchCriteria(queryParams) {
     /**
      * Country
      */
-    const countryRegex = queryParams.country && COUNTRIES[queryParams.country];
-    if (countryRegex) {
+    const validCountries = ['England', 'Northern Ireland', 'Scotland', 'Wales'];
+    if (queryParams.country && validCountries.indexOf(queryParams.country) !== -1) {
         match.$and.push(
-            { 'beneficiaryLocation.geoCode': { $regex: countryRegex.pattern } },
-            { 'beneficiaryLocation.geoCodeType': GEOCODE_TYPES.localAuthority }
+            { 'beneficiaryLocation.country': queryParams.country },
         );
     }
 
@@ -346,36 +326,16 @@ const AMOUNT_AWARDED_BUCKETS = [0, 10000, 50000, 100000, 1000000, Infinity];
 
 function buildFacetCriteria() {
     return {
+
         countries: [
             {
-                $project: {
-                    items: {
-                        $filter: {
-                            input: '$beneficiaryLocation',
-                            as: 'location',
-                            cond: {
-                                $eq: [
-                                    '$$location.geoCodeType',
-                                    GEOCODE_TYPES.localAuthority
-                                ]
-                            }
-                        }
-                    }
-                }
-            },
-            {
                 $group: {
-                    _id: {
-                        $substrBytes: [
-                            { $arrayElemAt: ['$items.geoCode', 0] },
-                            0,
-                            1
-                        ]
-                    },
+                    _id: { $arrayElemAt: ['$beneficiaryLocation.country', 0] },
                     count: { $sum: 1 }
                 }
             },
-            { $sort: { _id: 1 } }
+            { $sort: { _id: 1 } },
+            { $project: { count: 1, label: '$_id', value: '$_id' } }
         ],
 
         amountAwarded: [
@@ -391,9 +351,11 @@ function buildFacetCriteria() {
         ],
 
         localAuthorities: buildLocationFacet(GEOCODE_TYPES.localAuthority),
+
         westminsterConstituencies: buildLocationFacet(
             GEOCODE_TYPES.constituency
         ),
+
         awardDate: [
             {
                 $group: {
@@ -404,6 +366,7 @@ function buildFacetCriteria() {
             { $sort: { _id: -1 } },
             { $project: { count: 1, label: '$_id', value: '$_id' } }
         ],
+
         grantProgramme: [
             {
                 $group: {
@@ -414,21 +377,30 @@ function buildFacetCriteria() {
             { $sort: { _id: 1 } },
             { $project: { count: 1, label: '$_id', value: '$_id' } }
         ],
+
         orgType: [
             {
                 $group: {
                     _id: {
-                        $arrayElemAt: [
-                            '$recipientOrganization.organisationType',
-                            0
-                        ]
+                        type: {
+                            $arrayElemAt: [
+                                '$recipientOrganization.organisationType',
+                                0
+                            ]
+                        },
+                        subtype: {
+                            $arrayElemAt: [
+                                '$recipientOrganization.organisationSubtype',
+                                0
+                            ]
+                        },
                     },
-                    count: { $sum: 1 }
+                    count: { $sum: 1 },
                 }
             },
             { $sort: { _id: 1 } },
-            { $project: { count: 1, label: '$_id', value: '$_id' } }
-        ]
+            { $project: { count: 1, label: '$_id.type', value: '$_id.type' } }
+        ],
     };
 }
 
@@ -485,25 +457,32 @@ async function fetchFacets(collection, matchCriteria = {}) {
         return amount;
     });
 
-    // Enhance country facet by adding in the proper name
-    // and filtering out any non-standard ones (eg. the country "9")
-    facets.countries = facets.countries
-        .map(countryFacet => {
-            let isValid = false;
-            for (let countryKey in COUNTRIES) {
-                const country = COUNTRIES[countryKey];
-                isValid = country.pattern.test(countryFacet._id);
-                if (isValid) {
-                    countryFacet.label = country.title;
-                    countryFacet.value = countryKey;
-                    break;
-                }
+    // Combine org types
+    let orgGroups = groupBy(facets.orgType, '_id.type');
+    for (let parentGroup in orgGroups) {
+        let total = 0;
+        orgGroups[parentGroup] = orgGroups[parentGroup].map(group => {
+            total += group.count;
+            const name = group._id.subtype;
+            return {
+                _id: name,
+                count: group.count,
+                label: name,
+                value: name
             }
-            return countryFacet;
-        })
-        .filter(c => !!c.label);
+        }).sort((a, b) => a.label > b.label);
+        // Add an overall count at the start
+        orgGroups[parentGroup].unshift({
+            _id: 'All',
+            count: total,
+            label: 'All',
+            value: parentGroup
+        });
+    }
+    facets.orgType = orgGroups;
 
     // Strip out empty locations from missing geocodes
+    facets.countries = facets.countries.filter(f => !!f._id);
     facets.localAuthorities = facets.localAuthorities.filter(f => !!f._id);
     facets.westminsterConstituencies = facets.westminsterConstituencies.filter(
         f => !!f._id

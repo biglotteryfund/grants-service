@@ -18,6 +18,25 @@ const argv = require('yargs')
     .help('h')
     .alias('h', 'help').argv;
 
+const COUNTRIES = {
+    england: {
+        pattern: /^E/,
+        title: 'England'
+    },
+    wales: {
+        pattern: /^W/,
+        title: 'Wales'
+    },
+    scotland: {
+        pattern: /^S/,
+        title: 'Scotland'
+    },
+    'northern-ireland': {
+        pattern: /^N/,
+        title: 'Northern Ireland'
+    }
+};
+
 // Turn date fields into actual Date objects
 const parseDates = data => {
     const dateFields = [
@@ -98,6 +117,19 @@ const rename = data => {
         dateModified: data['Last modified']
     };
 
+    function getCountryName(geocode) {
+        let countryName, isValid;
+        for (let countryKey in COUNTRIES) {
+            const country = COUNTRIES[countryKey];
+            isValid = country.pattern.test(geocode);
+            if (isValid) {
+                countryName = country.title;
+                break;
+            }
+        }
+        return countryName;
+    }
+
     // Some records have no location, so only add that field if we find one
     if (data['Recipient Org:Location:0:Name'] && data['Recipient Org:Location:0:Name'] !== '') {
         // Add the first location (always a ward code)
@@ -109,16 +141,21 @@ const rename = data => {
             }
         ];
 
-        // There's a slim possibility a record has one location, but not the second
+        // There's a slim possibility a record has one location, but not a second
         // So add the local authority if we have one
         if (data['Recipient Org:Location:1:Name'] && data['Recipient Org:Location:1:Name'] !== '') {
-            newData.beneficiaryLocation.push(
-                {
-                    name: data['Recipient Org:Location:1:Name'],
-                    geoCode: data['Recipient Org:Location:1:Geographic Code'],
-                    geoCodeType: 'CMLAD'
-                }
-            );
+            const ladGeoCode = data['Recipient Org:Location:1:Geographic Code'];
+            let localAuthorityData = {
+                name: data['Recipient Org:Location:1:Name'],
+                geoCode: ladGeoCode,
+                geoCodeType: 'CMLAD'
+            };
+            // Add the country name (if valid) for later filtering
+            const countryName = getCountryName(ladGeoCode);
+            if (countryName) {
+                localAuthorityData.country = countryName;
+            }
+            newData.beneficiaryLocation.push(localAuthorityData);
         }
     }
 
@@ -150,6 +187,7 @@ const fixEncodingIssues = data => {
         [/â€“/g, "–"],
         [/â€¦/g, "…"],
         [/â€œ/g, '"'],
+        [/Â£/g, '£'],
         [/â€/g, '"'], // must come last, otherwise too general
     ];
     encodingFixes.forEach(pair => {
