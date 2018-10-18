@@ -27,11 +27,75 @@ const GEOCODE_TYPES = {
     constituency: 'WPC'
 };
 
-function addGrantDetail(grant) {
-    return flow(
-        addActiveStatus,
-        addFundingProgrammeDetail
-    )(grant);
+const DEFAULT_SORT = {
+    criteria: { awardDate: -1 },
+    value: 'awardDate|desc'
+};
+
+const DEFAULT_SORT_QUERY = {
+    criteria:  { score: { $meta: 'textScore' } },
+    value: 'score|desc'
+}
+
+/**
+ * Build sort criteria
+ * 1. Default to awardDate (newest first)
+ * 2. If we have an explicit sort param use that
+ * 3. Otherwise, if we're performing a text search sort by score
+ * @param {object} queryParams
+ */
+function determineSort(queryParams) {
+    let sort = DEFAULT_SORT;
+    if (queryParams.sort) {
+        const [field, direction] = queryParams.sort.split('|');
+        if (['awardDate', 'amountAwarded'].indexOf(field) !== -1) {
+            const criteria = {};
+            criteria[field] = direction === 'asc' ? 1 : -1;
+
+            sort = {
+                criteria: criteria,
+                value: queryParams.sort
+            };
+        }
+    } else if (queryParams.q) {
+        sort = DEFAULT_SORT_QUERY;
+    }
+
+    return sort;
+}
+
+function buildSortMeta(sort, queryParams) {
+    const sortOptions = [
+        {
+            label: 'Most recent',
+            value: 'awardDate|desc',
+        },
+        {
+            label: 'Oldest first',
+            value: 'awardDate|asc'
+        },
+        {
+            label: 'Lowest amount first',
+            value: 'amountAwarded|asc'
+        },
+        {
+            label: 'Highest amount first',
+            value: 'amountAwarded|desc'
+        }
+    ];
+
+    if (queryParams.q) {
+        sortOptions.unshift({
+            label: 'Most relevant',
+            value: 'score|desc'
+        });
+    }
+
+    return {
+        defaultSort: queryParams.q ? DEFAULT_SORT_QUERY.value : DEFAULT_SORT.value,
+        activeSort: sort.value,
+        sortOptions: sortOptions
+    };
 }
 
 function addActiveStatus(grant) {
@@ -55,31 +119,11 @@ function addFundingProgrammeDetail(grant) {
     return grant;
 }
 
-/**
- * Build sort criteria
- * 1. Default to awardDate (newest first)
- * 2. If we have an explicit sort param use that
- * 3. Otherwise, if we're performing a text search sort by score
- * @param {object} queryParams
- */
-function buildSortCriteria(queryParams) {
-    let sortConf = { awardDate: -1 };
-    if (queryParams.sort) {
-        const [field, direction] = queryParams.sort.split('|');
-        if (['awardDate', 'amountAwarded'].indexOf(field) !== -1) {
-            const newSortConf = {};
-            newSortConf[field] = direction === 'asc' ? 1 : -1;
-            sortConf = newSortConf;
-        }
-    } else if (queryParams.q) {
-        sortConf = {
-            score: {
-                $meta: 'textScore'
-            }
-        };
-    }
-
-    return sortConf;
+function addGrantDetail(grant) {
+    return flow(
+        addActiveStatus,
+        addFundingProgrammeDetail
+    )(grant);
 }
 
 /**
@@ -515,8 +559,8 @@ async function fetchGrants(mongo, queryParams) {
         delete queryParams.postcode;
     }
 
+    const sort = determineSort(queryParams);
     const matchCriteria = await buildMatchCriteria(queryParams);
-    const sortCriteria = buildSortCriteria(queryParams);
 
     /**
      * Construct the aggregation pipeline
@@ -525,7 +569,7 @@ async function fetchGrants(mongo, queryParams) {
      */
     const resultsPipeline = [
         { $match: matchCriteria },
-        { $sort: sortCriteria },
+        { $sort: sort.criteria },
         {
             $addFields: {
                 id: {
@@ -594,19 +638,12 @@ async function fetchGrants(mongo, queryParams) {
      * Pluck out the current sort type from the sort criteria
      * to allow us to return the sort as a meta key.
      */
-    const currentSortType = head(Object.keys(sortCriteria));
-    const currentSortDirection =
-        sortCriteria[currentSortType] === 1 ? 'asc' : 'desc';
-
     return {
         meta: {
             totalResults: totalGrantsForQuery,
             totalAwarded: totalAwarded,
             query: queryParams,
-            currentSort: {
-                type: currentSortType,
-                direction: currentSortDirection
-            },
+            sort: buildSortMeta(sort, queryParams),
             pagination: {
                 currentPage: currentPage,
                 perPageCount: perPageCount,
