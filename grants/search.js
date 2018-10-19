@@ -502,6 +502,7 @@ async function fetchFacets(collection, matchCriteria = {}) {
     });
 
     // Combine org types
+    facets.orgType = facets.orgType.filter(f => !!f.value);
     let orgGroups = groupBy(facets.orgType, '_id.type');
     for (let parentGroup in orgGroups) {
         let total = 0;
@@ -516,10 +517,11 @@ async function fetchFacets(collection, matchCriteria = {}) {
             }
         }).sort((a, b) => a.label > b.label);
         // Add an overall count at the start
+        const parentAll = `${parentGroup}: All`;
         orgGroups[parentGroup].unshift({
-            _id: 'All',
+            _id: parentAll,
             count: total,
-            label: 'All',
+            label: parentAll,
             value: parentGroup
         });
     }
