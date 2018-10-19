@@ -12,10 +12,6 @@ Object {
     "westminsterConstituencies": Array [],
   },
   "meta": Object {
-    "currentSort": Object {
-      "direction": "desc",
-      "type": "score",
-    },
     "pagination": Object {
       "currentPage": 1,
       "nextPageParams": undefined,
@@ -28,6 +24,32 @@ Object {
       "orgType": "MadeUpOrg",
       "programme": "Big Cheese Fund",
       "q": "\\"purple\\" \\"monkey\\" \\"dishwasher\\"",
+    },
+    "sort": Object {
+      "activeSort": "score|desc",
+      "defaultSort": "score|desc",
+      "sortOptions": Array [
+        Object {
+          "label": "Most relevant",
+          "value": "score|desc",
+        },
+        Object {
+          "label": "Most recent",
+          "value": "awardDate|desc",
+        },
+        Object {
+          "label": "Oldest first",
+          "value": "awardDate|asc",
+        },
+        Object {
+          "label": "Lowest amount first",
+          "value": "amountAwarded|asc",
+        },
+        Object {
+          "label": "Highest amount first",
+          "value": "amountAwarded|desc",
+        },
+      ],
     },
     "totalAwarded": false,
     "totalResults": 0,
