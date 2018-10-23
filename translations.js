@@ -1,5 +1,7 @@
 'use strict';
-module.exports = {
+const { get } = require('lodash');
+
+const translations = {
     misc: {
         'Under': {
           en: 'Under',
@@ -42,4 +44,26 @@ module.exports = {
             cy: 'WELSH ALL CHARITIES',
         }
     }
+};
+
+const getTranslation = (langKey, str, locale) => get(translations, [langKey, str, locale], str);
+
+/**
+ * Utility function to add in a translation to the label
+ */
+const translateLabels = (langKey, locale) => {
+    return facet => {
+        const translation = getTranslation(langKey, facet.label, locale);
+        // Is there a translation for this?
+        if (translation !== facet.label) {
+            facet.label = translation;
+        }
+        return facet;
+    };
+};
+
+module.exports = {
+    translations,
+    getTranslation,
+    translateLabels
 };

@@ -6,7 +6,7 @@ const moment = require('moment');
 
 const { matchPostcode, numberWithCommas } = require('../lib/strings');
 const fundingProgrammes = require('../data/fundingProgrammes');
-const translations = require('../translations');
+const { getTranslation, translateLabels } = require('../translations');
 
 /**
  * 360Giving organisation prefix
@@ -65,36 +65,34 @@ function determineSort(queryParams) {
     return sort;
 }
 
-const getTranslation = (langKey, str, locale) => get(translations, [langKey, str, locale], false);
 
 function buildSortMeta(sort, queryParams) {
-    const translateLabel = str => {
-        const translation = getTranslation('sortOptions', str, queryParams.locale);
-        return translation ? translation : str;
-    };
+
+    const locale = queryParams.locale || 'en';
+    const langKey = 'sortOptions';
 
     const sortOptions = [
         {
-            label: translateLabel('Most recent'),
+            label: getTranslation(langKey, 'Most recent', locale),
             value: 'awardDate|desc',
         },
         {
-            label: translateLabel('Oldest first'),
+            label: getTranslation(langKey, 'Oldest first', locale),
             value: 'awardDate|asc'
         },
         {
-            label: translateLabel('Lowest amount first'),
+            label: getTranslation(langKey, 'Lowest amount first', locale),
             value: 'amountAwarded|asc'
         },
         {
-            label: translateLabel('Highest amount first'),
+            label: getTranslation(langKey, 'Highest amount first', locale),
             value: 'amountAwarded|desc'
         }
     ];
 
     if (queryParams.q) {
         sortOptions.unshift({
-            label: translateLabel('Most relevant'),
+            label: getTranslation(langKey, 'Most relevant', locale),
             value: 'score|desc'
         });
     }
@@ -473,18 +471,7 @@ async function fetchFacets(collection, matchCriteria = {}, locale) {
      */
     const facets = head(facetsResult);
 
-    /**
-     * Utility function to add in a translation to the label
-     */
-    const translateLabels = langKey => {
-        return facet => {
-            const translation = getTranslation(langKey, facet.label, locale);
-            if (translation) {
-                facet.label = translation;
-            }
-            return facet;
-        };
-    };
+
 
     // Tweak the amountAwarded facet for the custom UI
     facets.amountAwarded = facets.amountAwarded.map(amount => {
@@ -548,22 +535,23 @@ async function fetchFacets(collection, matchCriteria = {}, locale) {
             value: parentGroup
         });
 
-        orgGroups[parentGroup] = orgGroups[parentGroup].map(translateLabels('orgTypes'));
+        orgGroups[parentGroup] = orgGroups[parentGroup]
+            .map(translateLabels('orgTypes', locale));
     }
     facets.orgType = orgGroups;
 
     // Strip out empty locations from missing geocodes
     facets.countries = facets.countries
         .filter(f => !!f._id)
-        .map(translateLabels('countries'));
+        .map(translateLabels('countries', locale));
 
     facets.localAuthorities = facets.localAuthorities
         .filter(f => !!f._id)
-        .map(translateLabels('localAuthorities'));
+        .map(translateLabels('localAuthorities', locale));
 
     facets.westminsterConstituencies = facets.westminsterConstituencies
         .filter(f => !!f._id)
-        .map(translateLabels('westminsterConstituencies'));
+        .map(translateLabels('westminsterConstituencies', locale));
 
     return facets;
 }
