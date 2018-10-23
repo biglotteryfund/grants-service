@@ -6,6 +6,7 @@ const moment = require('moment');
 
 const { matchPostcode, numberWithCommas } = require('../lib/strings');
 const fundingProgrammes = require('../data/fundingProgrammes');
+const { getTranslation, translateLabels } = require('../translations');
 
 /**
  * 360Giving organisation prefix
@@ -64,29 +65,34 @@ function determineSort(queryParams) {
     return sort;
 }
 
+
 function buildSortMeta(sort, queryParams) {
+
+    const locale = queryParams.locale || 'en';
+    const langKey = 'sortOptions';
+
     const sortOptions = [
         {
-            label: 'Most recent',
+            label: getTranslation(langKey, 'Most recent', locale),
             value: 'awardDate|desc',
         },
         {
-            label: 'Oldest first',
+            label: getTranslation(langKey, 'Oldest first', locale),
             value: 'awardDate|asc'
         },
         {
-            label: 'Lowest amount first',
+            label: getTranslation(langKey, 'Lowest amount first', locale),
             value: 'amountAwarded|asc'
         },
         {
-            label: 'Highest amount first',
+            label: getTranslation(langKey, 'Highest amount first', locale),
             value: 'amountAwarded|desc'
         }
     ];
 
     if (queryParams.q) {
         sortOptions.unshift({
-            label: 'Most relevant',
+            label: getTranslation(langKey, 'Most relevant', locale),
             value: 'score|desc'
         });
     }
@@ -448,7 +454,7 @@ function buildFacetCriteria() {
     };
 }
 
-async function fetchFacets(collection, matchCriteria = {}) {
+async function fetchFacets(collection, matchCriteria = {}, locale) {
     const facetCriteria = buildFacetCriteria();
 
     /**
@@ -464,6 +470,8 @@ async function fetchFacets(collection, matchCriteria = {}) {
      * Pluck out the first (and in our case only) item
      */
     const facets = head(facetsResult);
+
+
 
     // Tweak the amountAwarded facet for the custom UI
     facets.amountAwarded = facets.amountAwarded.map(amount => {
@@ -481,7 +489,8 @@ async function fetchFacets(collection, matchCriteria = {}) {
 
         let label;
         if (lowerBound === 0 && upperBound) {
-            label = `Under £${numberWithCommas(upperBound)}`;
+            const under = getTranslation('misc', 'Under', locale);
+            label = `${under} £${numberWithCommas(upperBound)}`;
         } else if (!upperBound) {
             label = `£${numberWithCommas(lowerBound)}+`;
         } else {
@@ -516,6 +525,7 @@ async function fetchFacets(collection, matchCriteria = {}) {
                 value: name
             }
         }).sort((a, b) => a.label > b.label);
+
         // Add an overall count at the start
         const parentAll = `${parentGroup}: All`;
         orgGroups[parentGroup].unshift({
@@ -524,15 +534,24 @@ async function fetchFacets(collection, matchCriteria = {}) {
             label: parentAll,
             value: parentGroup
         });
+
+        orgGroups[parentGroup] = orgGroups[parentGroup]
+            .map(translateLabels('orgTypes', locale));
     }
     facets.orgType = orgGroups;
 
     // Strip out empty locations from missing geocodes
-    facets.countries = facets.countries.filter(f => !!f._id);
-    facets.localAuthorities = facets.localAuthorities.filter(f => !!f._id);
-    facets.westminsterConstituencies = facets.westminsterConstituencies.filter(
-        f => !!f._id
-    );
+    facets.countries = facets.countries
+        .filter(f => !!f._id)
+        .map(translateLabels('countries', locale));
+
+    facets.localAuthorities = facets.localAuthorities
+        .filter(f => !!f._id)
+        .map(translateLabels('localAuthorities', locale));
+
+    facets.westminsterConstituencies = facets.westminsterConstituencies
+        .filter(f => !!f._id)
+        .map(translateLabels('westminsterConstituencies', locale));
 
     return facets;
 }
@@ -546,6 +565,7 @@ async function fetchGrants(mongo, queryParams) {
     const pageParam = queryParams.page && parseInt(queryParams.page);
     const currentPage = pageParam > 1 ? pageParam : 1;
     const skipCount = perPageCount * (currentPage - 1);
+    const locale = queryParams.locale || 'en';
 
     /**
      * Handle directly entered postcodes
@@ -632,7 +652,7 @@ async function fetchGrants(mongo, queryParams) {
 
             facets = head(cachedFacets);
         } else {
-            facets = await fetchFacets(mongo.grantsCollection, matchCriteria);
+            facets = await fetchFacets(mongo.grantsCollection, matchCriteria, locale);
         }
     }
 
