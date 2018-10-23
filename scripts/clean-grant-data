@@ -131,7 +131,10 @@ const rename = data => {
     }
 
     // Some records have no location, so only add that field if we find one
-    if (data['Recipient Org:Location:0:Name'] && data['Recipient Org:Location:0:Name'] !== '') {
+    if (data['Recipient Org:Location:0:Name'] &&
+        data['Recipient Org:Location:0:Name'] !== '' &&
+        data['Recipient Org:Location:0:Name'] !== 'NULL'
+    ) {
         // Add the first location (always a ward code)
         newData.beneficiaryLocation = [
             {
@@ -192,13 +195,17 @@ const fixEncodingIssues = data => {
     ];
     encodingFixes.forEach(pair => {
         let [wrong, right] = pair;
-        const hasBrokenTitle = data.title.match(wrong);
-        if (hasBrokenTitle) {
-            data.title = data.title.replace(wrong, right);
+        if (data.title) {
+            const hasBrokenTitle = data.title.match(wrong);
+            if (hasBrokenTitle) {
+                data.title = data.title.replace(wrong, right);
+            }
         }
-        const hasBrokenDescription = data.description.match(wrong);
-        if (hasBrokenDescription) {
-            data.description = data.description.replace(wrong, right);
+        if (data.description) {
+            const hasBrokenDescription = data.description.match(wrong);
+            if (hasBrokenDescription) {
+                data.description = data.description.replace(wrong, right);
+            }
         }
     });
 
