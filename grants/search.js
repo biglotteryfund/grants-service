@@ -219,9 +219,9 @@ async function buildMatchCriteria(queryParams) {
     /**
      * Westminster Constituency
      */
-    if (queryParams.constituency) {
+    if (queryParams.westminsterConstituency) {
         match.$and.push({
-            'beneficiaryLocation.geoCode': queryParams.constituency
+            'beneficiaryLocation.geoCode': queryParams.westminsterConstituency
         });
     }
 
