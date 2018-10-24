@@ -19,7 +19,7 @@ fi
 
 if [ -z "$3" ]
   then
-    echo "Second argument should be a collection name to import into"
+    echo "Third argument should be a collection name to import into"
     exit 1
 fi
 
