@@ -85,7 +85,7 @@ describe('Past Grants Search', () => {
             postcode: 'N1 9GU'
         });
 
-        expect(result).toMatchSnapshot();
+        expect(result.meta.totalResults).toEqual(0);
     });
 
     it('should convert multi-word queries into quoted strings', async () => {

@@ -15,6 +15,9 @@ const { getTranslation, translateLabels } = require('../translations');
  */
 const ID_PREFIX = '360G-blf-';
 
+const now = moment();
+const URL_DATE_FORMAT = 'YYYY-MM-DD';
+
 /**
  * Country regular expressions
  * geocodes start with a letter prefix denoting the country
@@ -36,7 +39,7 @@ const DEFAULT_SORT = {
 const DEFAULT_SORT_QUERY = {
     criteria:  { score: { $meta: 'textScore' } },
     value: 'score|desc'
-}
+};
 
 /**
  * Build sort criteria
@@ -108,7 +111,7 @@ function addActiveStatus(grant) {
     const endDate = get(grant, 'plannedDates[0].endDate', false);
 
     if (endDate) {
-        grant.isActive = !moment(endDate).isBefore(moment());
+        grant.isActive = !moment(endDate).isBefore(now);
     }
 
     return grant;
@@ -165,12 +168,12 @@ async function buildMatchCriteria(queryParams) {
     }
 
     /**
-     * Award date year
+     * Award date range
      */
-    if (queryParams.year) {
-        var start = new Date(queryParams.year, 0, 1);
-        var end = new Date(queryParams.year, 11, 31);
-
+    if (queryParams.awardDate) {
+        const [start, end] = queryParams.awardDate
+            .split('|')
+            .map(str => moment(str).toDate());
         match.$and.push({
             awardDate: { $gte: start, $lt: end }
         });
@@ -539,6 +542,34 @@ async function fetchFacets(collection, matchCriteria = {}, locale) {
             .map(translateLabels('orgTypes', locale));
     }
     facets.orgType = orgGroups;
+
+    // Convert date facets into ranges
+    facets.awardDate = facets.awardDate
+        .map(awardDate => {
+            const year = awardDate.value;
+            const start = moment(new Date(year, 0, 1)).format(URL_DATE_FORMAT);
+            const end = moment(new Date(year, 11, 31)).format(URL_DATE_FORMAT);
+            awardDate.value = `${start}|${end}`;
+            return awardDate;
+        });
+
+    const makeDateOption = (number, name) => {
+        // Without .clone(), moment mutates the original $now
+        const start = now.clone().subtract(number, 'months').format(URL_DATE_FORMAT);
+        const end = now.format(URL_DATE_FORMAT);
+        return {
+            _id: `last${number}Months`,
+            label: `Last ${name} months`,
+            value: `${start}|${end}`
+        }
+    };
+
+    // @TODO - Should we only offer these options if the dataset is more recent than this?
+    const additionalDateOptions = [
+        makeDateOption(3, 'three'),
+        makeDateOption(6, 'six'),
+    ];
+    facets.awardDate.unshift(...additionalDateOptions);
 
     // Strip out empty locations from missing geocodes
     facets.countries = facets.countries
