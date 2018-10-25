@@ -4,7 +4,18 @@ exports[`Past Grants Search should return empty results for invalid queries 1`] 
 Object {
   "facets": Object {
     "amountAwarded": Array [],
-    "awardDate": Array [],
+    "awardDate": Array [
+      Object {
+        "_id": "last3Months",
+        "label": "Last three months",
+        "value": "2018-07-25|2018-10-25",
+      },
+      Object {
+        "_id": "last6Months",
+        "label": "Last six months",
+        "value": "2018-04-25|2018-10-25",
+      },
+    ],
     "countries": Array [],
     "grantProgramme": Array [],
     "localAuthorities": Array [],
