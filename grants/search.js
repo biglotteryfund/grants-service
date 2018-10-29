@@ -596,12 +596,14 @@ async function fetchFacets(collection, matchCriteria = {}, locale, grantResults 
             }
         ];
         const newestGrant = head(sortBy(grantResults, 'awardDate').reverse());
-        const monthsAgo = now.diff(moment(newestGrant.awardDate), 'months');
-        additionalDateOptions.forEach(dateOpt => {
-            if (dateOpt.number > monthsAgo) {
-                facets.awardDate.unshift(makeDateOption(dateOpt))
-            }
-        });
+        if (newestGrant) {
+            const monthsAgo = now.diff(moment(newestGrant.awardDate), 'months');
+            additionalDateOptions.forEach(dateOpt => {
+                if (dateOpt.number > monthsAgo) {
+                    facets.awardDate.unshift(makeDateOption(dateOpt))
+                }
+            });
+        }
     }
 
 
