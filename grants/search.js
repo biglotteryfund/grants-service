@@ -1,5 +1,5 @@
 'use strict';
-const { flow, get, head, groupBy } = require('lodash');
+const { flow, get, head, groupBy, difference } = require('lodash');
 const request = require('request-promise-native');
 const querystring = require('querystring');
 const moment = require('moment');
@@ -17,6 +17,20 @@ const ID_PREFIX = '360G-blf-';
 
 const now = moment();
 const URL_DATE_FORMAT = 'YYYY-MM-DD';
+
+const COMMON_WORDS = [
+    'group',
+    'project',
+    'communities',
+    'community',
+    'fund',
+    'people',
+    'active',
+    'grant',
+    'school',
+    'award',
+    'local',
+];
 
 /**
  * Country regular expressions
@@ -262,15 +276,22 @@ async function buildMatchCriteria(queryParams) {
      */
     if (queryParams.q) {
         if (queryParams.q.indexOf('"') === -1 && !queryParams.related) {
-            queryParams.q = queryParams.q
-                .split(' ')
-                .map(term => {
-                    // Don't wrap it in quotes if this is negation
-                    return /^-/.test(term) ? term : `"${term}"`;
-                })
-                .join(' ');
+            // Split our query into words and make it lowercase
+            let terms = queryParams.q.split(' ').map(s => s.toLowerCase());
+            // Exclude common words from the query
+            let termsMinusCommon = difference(terms, COMMON_WORDS);
+            if (termsMinusCommon.length !== 0) {
+                terms = termsMinusCommon;
+            }
+            // Quote each word (eg. AND search)
+            terms = terms.map(term => {
+                // Don't wrap a word in quotes if this is negation
+                return /^-/.test(term) ? term : `"${term}"`;
+            });
+            // Reassemble the string
+            queryParams.q = terms.join(' ');
         }
-
+        
         match.$text = {
             $search: queryParams.q
         };
