@@ -1,5 +1,5 @@
 'use strict';
-const { flow, get, head, groupBy } = require('lodash');
+const { flow, get, head, groupBy, difference, sortBy } = require('lodash');
 const request = require('request-promise-native');
 const querystring = require('querystring');
 const moment = require('moment');
@@ -17,6 +17,20 @@ const ID_PREFIX = '360G-blf-';
 
 const now = moment();
 const URL_DATE_FORMAT = 'YYYY-MM-DD';
+
+const COMMON_WORDS = [
+    'group',
+    'project',
+    'communities',
+    'community',
+    'fund',
+    'people',
+    'active',
+    'grant',
+    'school',
+    'award',
+    'local',
+];
 
 /**
  * Country regular expressions
@@ -262,13 +276,20 @@ async function buildMatchCriteria(queryParams) {
      */
     if (queryParams.q) {
         if (queryParams.q.indexOf('"') === -1 && !queryParams.related) {
-            queryParams.q = queryParams.q
-                .split(' ')
-                .map(term => {
-                    // Don't wrap it in quotes if this is negation
-                    return /^-/.test(term) ? term : `"${term}"`;
-                })
-                .join(' ');
+            // Split our query into words and make it lowercase
+            let terms = queryParams.q.split(' ').map(s => s.toLowerCase());
+            // Exclude common words from the query
+            let termsMinusCommon = difference(terms, COMMON_WORDS);
+            if (termsMinusCommon.length !== 0) {
+                terms = termsMinusCommon;
+            }
+            // Quote each word (eg. AND search)
+            terms = terms.map(term => {
+                // Don't wrap a word in quotes if this is negation
+                return /^-/.test(term) ? term : `"${term}"`;
+            });
+            // Reassemble the string
+            queryParams.q = terms.join(' ');
         }
 
         match.$text = {
@@ -457,7 +478,7 @@ function buildFacetCriteria() {
     };
 }
 
-async function fetchFacets(collection, matchCriteria = {}, locale) {
+async function fetchFacets(collection, matchCriteria = {}, locale, grantResults = false) {
     const facetCriteria = buildFacetCriteria();
 
     /**
@@ -473,8 +494,6 @@ async function fetchFacets(collection, matchCriteria = {}, locale) {
      * Pluck out the first (and in our case only) item
      */
     const facets = head(facetsResult);
-
-
 
     // Tweak the amountAwarded facet for the custom UI
     facets.amountAwarded = facets.amountAwarded.map(amount => {
@@ -553,23 +572,40 @@ async function fetchFacets(collection, matchCriteria = {}, locale) {
             return awardDate;
         });
 
-    const makeDateOption = (number, name) => {
-        // Without .clone(), moment mutates the original $now
-        const start = now.clone().subtract(number, 'months').format(URL_DATE_FORMAT);
-        const end = now.format(URL_DATE_FORMAT);
-        return {
-            _id: `last${number}Months`,
-            label: `Last ${name} months`,
-            value: `${start}|${end}`
+    // Add dynamic date filters (eg. 3 months ago)
+    // if the results set allows this
+    if (grantResults) {
+        const makeDateOption = ({ number, name }) => {
+            // Without .clone(), moment mutates the original $now
+            const start = now.clone().subtract(number, 'months').format(URL_DATE_FORMAT);
+            const end = now.format(URL_DATE_FORMAT);
+            return {
+                _id: `last${number}Months`,
+                label: `Last ${name} months`,
+                value: `${start}|${end}`
+            }
+        };
+        const additionalDateOptions = [
+            {
+                number: 3,
+                name: 'three'
+            },
+            {
+                number: 6,
+                name: 'six'
+            }
+        ];
+        const newestGrant = head(sortBy(grantResults, 'awardDate').reverse());
+        if (newestGrant) {
+            const monthsAgo = now.diff(moment(newestGrant.awardDate), 'months');
+            additionalDateOptions.forEach(dateOpt => {
+                if (dateOpt.number > monthsAgo) {
+                    facets.awardDate.unshift(makeDateOption(dateOpt))
+                }
+            });
         }
-    };
+    }
 
-    // @TODO - Should we only offer these options if the dataset is more recent than this?
-    const additionalDateOptions = [
-        makeDateOption(3, 'three'),
-        makeDateOption(6, 'six'),
-    ];
-    facets.awardDate.unshift(...additionalDateOptions);
 
     // Strip out empty locations from missing geocodes
     facets.countries = facets.countries
@@ -683,7 +719,7 @@ async function fetchGrants(mongo, queryParams) {
 
             facets = head(cachedFacets);
         } else {
-            facets = await fetchFacets(mongo.grantsCollection, matchCriteria, locale);
+            facets = await fetchFacets(mongo.grantsCollection, matchCriteria, locale, grantsResult);
         }
     }
 
