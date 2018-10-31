@@ -534,7 +534,9 @@ async function fetchFacets(collection, matchCriteria = {}, locale, grantResults 
 
     // Combine org types
     facets.orgType = facets.orgType.filter(f => !!f.value);
-    let orgGroups = groupBy(facets.orgType, '_id.type');
+    let orgGroups = groupBy(facets.orgType, f => {
+        return getTranslation('orgTypes', f._id.type, locale);
+    });
     for (let parentGroup in orgGroups) {
         let total = 0;
         orgGroups[parentGroup] = orgGroups[parentGroup].map(group => {
@@ -581,7 +583,7 @@ async function fetchFacets(collection, matchCriteria = {}, locale, grantResults 
             const end = now.format(URL_DATE_FORMAT);
             return {
                 _id: `last${number}Months`,
-                label: `Last ${name} months`,
+                label: getTranslation('misc', `Last ${name} months`, locale),
                 value: `${start}|${end}`
             }
         };
@@ -716,8 +718,7 @@ async function fetchGrants(mongo, queryParams) {
                 .limit(1)
                 .sort({ $natural: -1 })
                 .toArray();
-
-            facets = head(cachedFacets);
+            facets = get(head(cachedFacets), locale);
         } else {
             facets = await fetchFacets(mongo.grantsCollection, matchCriteria, locale, grantsResult);
         }
