@@ -517,7 +517,7 @@ async function fetchFacets(collection, matchCriteria = {}, locale, grantResults 
             label = `£${numberWithCommas(lowerBound)}+`;
         } else {
             label = `£${numberWithCommas(lowerBound)}–£${numberWithCommas(
-                upperBound
+                upperBound - 1
             )}`;
         }
 
