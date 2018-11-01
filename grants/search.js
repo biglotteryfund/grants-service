@@ -589,13 +589,13 @@ async function fetchFacets(collection, matchCriteria = {}, locale, grantResults 
         };
         const additionalDateOptions = [
             {
+                number: 6,
+                name: 'six'
+            },
+            {
                 number: 3,
                 name: 'three'
             },
-            {
-                number: 6,
-                name: 'six'
-            }
         ];
         const newestGrant = head(sortBy(grantResults, 'awardDate').reverse());
         if (newestGrant) {

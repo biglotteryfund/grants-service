@@ -31,12 +31,18 @@ router.route('/').get(async (req, res) => {
 router.get('/build-facets', async (req, res) => {
     try {
         const mongo = await connectToMongo();
-        const resultsEn = await fetchFacets(mongo.grantsCollection, {
-            awardDate: { $exists: true }
+
+        const latestGrant = await fetchGrants(mongo, {
+            limit: 1,
+            sort: 'awardDate|desc'
         });
-        const resultsCy = await fetchFacets(mongo.grantsCollection, {
+
+        const getFacets = async locale => fetchFacets(mongo.grantsCollection, {
             awardDate: { $exists: true }
-        }, 'cy');
+        }, locale, latestGrant);
+
+        const resultsEn = await getFacets('en');
+        const resultsCy = await getFacets('cy');
 
         await mongo.facetsCollection.insertOne({
             en: resultsEn,
