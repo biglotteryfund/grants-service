@@ -5,4 +5,11 @@ INPUT_JSON=$1
 DATABASE_NAME=$2
 COLLECTION_NAME=$3
 
-mongoimport -d "$DATABASE_NAME" -c "$COLLECTION_NAME" --type json --file "$INPUT_JSON"
+# Create indices so the upsert isn't deathly slow
+echo "Creating indices..."
+export MONGO_COLLECTION=$COLLECTION_NAME
+./scripts/create-indices
+echo "Indices created. Now importing data..."
+
+# Upsert the data by the id field to keep duplicates out
+mongoimport -d "$DATABASE_NAME" -c "$COLLECTION_NAME" --type json --file "$INPUT_JSON" --mode upsert --upsertFields id
