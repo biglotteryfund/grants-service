@@ -10,6 +10,10 @@ Once you have a CSV file, you'll need to import it to your local mongo installat
 
 `./scripts/import-csv <path-to-file.csv> <database-name> <collection-name>`
 
+Alternatively run the following to import a directory of CSV
+
+`./scripts/import-all path/to/directory <database-name> <collection-name>`
+
 This script will:
 
 -   Parse the CSV data into JSON
@@ -19,8 +23,8 @@ This script will:
 Next, ensure your local `.env` file points to the above database/collection:
 
     MONGO_URL=mongodb://localhost
-    MONGO_DB=blf
-    MONGO_COLLECTION=grants
+    MONGO_DB= <database-name>
+    MONGO_COLLECTION= <collection-name>
 
 Run `npm start` and you should be able to hit `http://localhost:8888/past-grants-search` and see some results.
 
@@ -28,14 +32,13 @@ Run `npm start` and you should be able to hit `http://localhost:8888/past-grants
 
 ![Data Pipeline](https://imgs.xkcd.com/comics/data_pipeline.png)
 
-
 When a new dataset is released, you'll need to first run the above script (`import-csv`) to append it to your existing database (or create a new one).
 
 Once you've done this and have confirmed it works as expected, you can push the updated dataset live:
 
 1. Export your local Mongo database:
 
-    `./scripts/export-local <path-to-backup-directory> <name-of-local-collection>`
+    `./scripts/export-local <path-to-backup-directory> <local-collection-name>`
 
 2. Restore this backup to the remote Mongo instance:
 

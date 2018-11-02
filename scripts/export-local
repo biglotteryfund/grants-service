@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 BACKUP_DIR=$1
-COLLECTION=$2
+COLLECTION_NAME=$2
 
 if [ -z "$1" ]
   then
@@ -15,7 +15,7 @@ if [ -z "$2" ]
     exit 1
 fi
 
-mongodump --db blf --collection "$COLLECTION" --out "$BACKUP_DIR"
+mongodump --db blf --collection "$COLLECTION_NAME" --out "$BACKUP_DIR"
 
 echo "Dump completed!"
 echo "To upload this export to the remote Mongo instance, use the following command:"

@@ -13,7 +13,7 @@ const indices = require('../lib/indices');
             return grantsCollection.createIndex(index.spec, index.options);
         }));
         console.log(await grantsCollection.listIndexes().toArray());
-        console.log(`Indices were created for ${process.env.MONGO_COLLECTION}`);
+        console.log(`Indices were created for ${process.env.MONGO_COLLECTION} in ${process.env.MONGO_DB}`);
         process.exit(0);
     } catch (error) {
         console.log(error);
