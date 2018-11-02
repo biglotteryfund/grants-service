@@ -27,6 +27,7 @@ const COMMON_WORDS = [
     'people',
     'active',
     'grant',
+    'grants',
     'school',
     'award',
     'local',
