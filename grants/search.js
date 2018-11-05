@@ -135,7 +135,7 @@ function addActiveStatus(grant) {
 function addFundingProgrammeDetail(grant) {
     const mainProgramme = head(grant.grantProgramme);
     if (mainProgramme) {
-        const programme = get(fundingProgrammes, mainProgramme.title, false);
+        const programme = get(fundingProgrammes, mainProgramme.code, false);
         if (programme && programme.urlPath) {
             mainProgramme.url = programme.urlPath;
         }

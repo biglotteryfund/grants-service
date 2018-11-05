@@ -244,8 +244,8 @@ const addLocations = data => {
 const unknownProgrammes = [];
 const checkForNewProgrammes = data => {
     const mainProgramme = data.grantProgramme[0];
-    if (mainProgramme && knownProgrammes.indexOf(mainProgramme.title) === -1) {
-        unknownProgrammes.push(mainProgramme.title);
+    if (mainProgramme && knownProgrammes.indexOf(mainProgramme.code) === -1) {
+        unknownProgrammes.push(mainProgramme.code);
     }
     return data;
 };
