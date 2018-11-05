@@ -1,5 +1,5 @@
 'use strict';
-const { flow, get, head, groupBy, difference, sortBy } = require('lodash');
+const { difference, flow, get, groupBy, head, sortBy } = require('lodash');
 const request = require('request-promise-native');
 const querystring = require('querystring');
 const moment = require('moment');
@@ -150,6 +150,16 @@ function addGrantDetail(grant) {
     )(grant);
 }
 
+function makeDateRange(monthsAgo) {
+    // Without .clone(), moment mutates the original $now
+    const start = now
+        .clone()
+        .subtract(monthsAgo, 'months')
+        .toDate();
+    const end = now.toDate();
+    return [start, end];
+}
+
 /**
  * Build $match criteria
  * @see https://docs.mongodb.com/manual/reference/operator/aggregation/match/index.html
@@ -184,14 +194,31 @@ async function buildMatchCriteria(queryParams) {
 
     /**
      * Award date range
+     * Handle last 3 and last 6 months as presets
+     * Otherwise accept date range in the form yyyy-mm-dd|yyyy-mm-dd
      */
     if (queryParams.awardDate) {
-        const [start, end] = queryParams.awardDate
-            .split('|')
-            .map(str => moment(str).toDate());
-        match.$and.push({
-            awardDate: { $gte: start, $lt: end }
-        });
+        if (/last3months/i.test(queryParams.awardDate)) {
+            const [start, end] = makeDateRange(3);
+
+            match.$and.push({
+                awardDate: { $gte: start, $lt: end }
+            });
+        } else if (/last6months/i.test(queryParams.awardDate)) {
+            const [start, end] = makeDateRange(6);
+
+            match.$and.push({
+                awardDate: { $gte: start, $lt: end }
+            });
+        } else {
+            const [start, end] = queryParams.awardDate
+                .split('|')
+                .map(str => moment(str).toDate());
+
+            match.$and.push({
+                awardDate: { $gte: start, $lt: end }
+            });
+        }
     }
 
     /**
@@ -565,50 +592,46 @@ async function fetchFacets(collection, matchCriteria = {}, locale, grantResults 
     }
     facets.orgType = orgGroups;
 
-    // Convert date facets into ranges
-    facets.awardDate = facets.awardDate
-        .map(awardDate => {
-            const year = awardDate.value;
-            const start = moment(new Date(year, 0, 1)).format(URL_DATE_FORMAT);
-            const end = moment(new Date(year, 11, 31)).format(URL_DATE_FORMAT);
-            awardDate.value = `${start}|${end}`;
-            return awardDate;
-        });
+    /**
+     * Convert date facets into ranges
+     */
+    const awardDateOptions = facets.awardDate.map(awardDate => {
+        const year = awardDate.value;
+        const start = moment(new Date(year, 0, 1)).format(URL_DATE_FORMAT);
+        const end = moment(new Date(year, 11, 31)).format(URL_DATE_FORMAT);
+        awardDate.value = `${start}|${end}`;
+        return awardDate;
+    });
 
-    // Add dynamic date filters (eg. 3 months ago)
-    // if the results set allows this
+    /**
+     * Add dynamic date filters (eg. 3 months, 6 months ago)
+     * Only add if the results set allows this
+     */
     if (grantResults) {
-        const makeDateOption = ({ number, name }) => {
-            // Without .clone(), moment mutates the original $now
-            const start = now.clone().subtract(number, 'months').format(URL_DATE_FORMAT);
-            const end = now.format(URL_DATE_FORMAT);
-            return {
-                _id: `last${number}Months`,
-                label: getTranslation('misc', `Last ${name} months`, locale),
-                value: `${start}|${end}`
-            }
-        };
-        const additionalDateOptions = [
-            {
-                number: 6,
-                name: 'six'
-            },
-            {
-                number: 3,
-                name: 'three'
-            },
-        ];
         const newestGrant = head(sortBy(grantResults, 'awardDate').reverse());
+
         if (newestGrant) {
             const monthsAgo = now.diff(moment(newestGrant.awardDate), 'months');
-            additionalDateOptions.forEach(dateOpt => {
-                if (dateOpt.number > monthsAgo) {
-                    facets.awardDate.unshift(makeDateOption(dateOpt))
-                }
-            });
+
+            if (monthsAgo < 6) {
+                awardDateOptions.unshift({
+                    _id: `last6Months`,
+                    label: getTranslation('misc', `Last six months`, locale),
+                    value: 'last6Months'
+                });
+            }
+
+            if (monthsAgo < 3) {
+                awardDateOptions.unshift({
+                    _id: `last3Months`,
+                    label: getTranslation('misc', `Last three months`, locale),
+                    value: 'last3Months'
+                });
+            }
         }
     }
 
+    facets.awardDate = awardDateOptions;
 
     // Strip out empty locations from missing geocodes
     facets.countries = facets.countries
