@@ -39,4 +39,3 @@ echo "Importing grant data into '$COLLECTION_NAME' collection in database '$DATA
 rm tmp-parsed.json tmp-clean.json;
 echo "Cleanup complete";
 echo "CSV import successful!";
-echo "If this is a new database, point your local app at it and create the indices."

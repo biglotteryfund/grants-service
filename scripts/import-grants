@@ -5,10 +5,14 @@ INPUT_JSON=$1
 DATABASE_NAME=$2
 COLLECTION_NAME=$3
 
+export MONGO_URL=mongodb://localhost:27017
+export MONGO_DB=$DATABASE_NAME
+export MONGO_COLLECTION=$COLLECTION_NAME
+
 # Create indices so the upsert isn't deathly slow
 echo "Creating indices..."
-export MONGO_COLLECTION=$COLLECTION_NAME
 ./scripts/create-indices
+
 echo "Indices created. Now importing data..."
 
 # Upsert the data by the id field to keep duplicates out
