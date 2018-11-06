@@ -3,7 +3,7 @@
 const fs = require('fs');
 const es = require('event-stream');
 const moment = require('moment');
-const _ = require('lodash');
+const { pickBy, identity, get, includes, uniq, flow } = require('lodash');
 const split = require('split');
 
 const wardLocations = require('../data/ward-locations');
@@ -163,7 +163,7 @@ const rename = data => {
     }
 
     // Strip out null / undefined
-    return _.pickBy(newData, _.identity);
+    return pickBy(newData, identity);
 
 };
 
@@ -176,6 +176,26 @@ const fixHeroesReturnTypo = data => {
             org.name = org.name.replace(wrong, right);
         }
         return org;
+    });
+    return data;
+};
+
+// Rename funding programmes from their FMS/internal name
+// to a public-facing one
+const programmesToRename = [
+    {
+        from: 'UK Accelerating Ideas',
+        to: 'UK Portfolio'
+    }
+];
+const renameProgrammes = data => {
+    data.grantProgramme = data.grantProgramme.map(programme => {
+        const shouldRename = programmesToRename.find(p => p.from === programme.title);
+        if (shouldRename) {
+            programme.titleInternal = programme.title;
+            programme.title = shouldRename.to;
+        }
+        return programme;
     });
     return data;
 };
@@ -250,6 +270,7 @@ const checkForNewProgrammes = data => {
     return data;
 };
 
+
 const outputFileStream = fs.createWriteStream(argv.o, { flags:'a' });
 
 const getStream = function () {
@@ -260,15 +281,27 @@ const getStream = function () {
 console.log('Beginning cleaning of grant data...');
 
 getStream().pipe(es.mapSync((data) => {
-    let cleaned = [data]
-        .map(parseDates)
-        .map(separateOrgType)
-        .map(rename)
-        .map(fixHeroesReturnTypo)
-        .map(fixEncodingIssues)
-        .map(addLocations)
-        .map(checkForNewProgrammes);
-    outputFileStream.write(JSON.stringify(cleaned[0], null, 4) + '\n');
+    let cleaned = flow(
+        parseDates,
+        separateOrgType,
+        rename,
+        fixHeroesReturnTypo,
+        fixEncodingIssues,
+        addLocations,
+        renameProgrammes,
+        checkForNewProgrammes
+    )(data);
+
+    // Remove data from internal-only programmes
+    // (eg. transfer of funds)
+    const invalidProgrammeCodes = ['PFP1'];
+    const mainProgrammeCode = get(cleaned, 'grantProgramme[0].code');
+    if (!includes(invalidProgrammeCodes, mainProgrammeCode)) {
+        outputFileStream.write(JSON.stringify(cleaned) + '\n');
+    } else {
+        console.log('Skipped output', cleaned);
+    }
+
 }).on('error', function (err) {
     console.log('Error parsing JSON', err);
 }).on('end', () => {
@@ -277,7 +310,7 @@ getStream().pipe(es.mapSync((data) => {
         console.log('=================');
         console.log('Some unknown programmes were included in this import.');
         console.log('You should add the following items to /data/fundingProgrammes.js');
-        _.uniq(unknownProgrammes).forEach(programme => {
+        uniq(unknownProgrammes).forEach(programme => {
             let data = {};
             data[programme] = {
                 "_id": programme,

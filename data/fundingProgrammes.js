@@ -1055,7 +1055,7 @@ module.exports = {
     "UKP1": {
         "_id": "UK Accelerating Ideas",
         "code": "UKP1",
-        "urlPath": "/global-content/programmes/uk-wide/uk-accelerating-ideas-pilot"
+        "urlPath": "awards-from-the-uk-portfolio"
     },
     "VLL1": {
         "_id": "Village SOS",
