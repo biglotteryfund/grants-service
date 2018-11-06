@@ -8,12 +8,13 @@ const indices = require('../lib/indices');
 
 (async () => {
     try {
-        const { grantsCollection } = await connectToMongo();
+        const { client, grantsCollection } = await connectToMongo();
         await Promise.all(indices.map(index => {
             return grantsCollection.createIndex(index.spec, index.options);
         }));
         console.log(await grantsCollection.listIndexes().toArray());
         console.log(`Indices were created for ${process.env.MONGO_COLLECTION} in ${process.env.MONGO_DB}`);
+        client.close();
         process.exit(0);
     } catch (error) {
         console.log(error);
