@@ -10,6 +10,7 @@ const indices = require('../lib/indices');
     try {
         const { client, grantsCollection } = await connectToMongo();
         await Promise.all(indices.map(index => {
+            index.options.background = true;
             return grantsCollection.createIndex(index.spec, index.options);
         }));
         console.log(await grantsCollection.listIndexes().toArray());
