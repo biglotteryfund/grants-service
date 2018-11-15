@@ -23,6 +23,8 @@ const COMMON_WORDS = [
     'project',
     'communities',
     'community',
+    'organisation',
+    'organisations',
     'fund',
     'people',
     'active',
