@@ -8,11 +8,15 @@ You'll need to download at least one of the existing datasets from the [GrantNav
 
 Once you have a CSV file, you'll need to import it to your local mongo installation:
 
-`./scripts/import-csv <path-to-file.csv> <database-name> <collection-name>`
+```
+./scripts/import-csv <path-to-file.csv> <database-name> <collection-name>
+```
 
 Alternatively run the following to import a directory of CSV
 
-`./scripts/import-all path/to/directory <database-name> <collection-name>`
+```
+./scripts/import-all path/to/directory <database-name> <collection-name>
+```
 
 This script will:
 
@@ -22,9 +26,11 @@ This script will:
 
 Next, ensure your local `.env` file points to the above database/collection:
 
-    MONGO_URL=mongodb://localhost
-    MONGO_DB= <database-name>
-    MONGO_COLLECTION= <collection-name>
+```
+MONGO_URL=mongodb://localhost
+MONGO_DB= <database-name>
+MONGO_COLLECTION= <collection-name>
+```
 
 Run `npm start` and you should be able to hit `http://localhost:8888/past-grants-search` and see some results.
 
@@ -38,13 +44,17 @@ Once you've done this and have confirmed it works as expected, you can push the 
 
 1. Export your local Mongo database:
 
-    `./scripts/export-local <path-to-backup-directory> <local-collection-name>`
+```
+./scripts/export-local <path-to-backup-directory> <local-collection-name>
+```
 
 2. Restore this backup to the remote Mongo instance:
 
-    `./scripts/import-remote "list,of,hostnames" <path-to-backup-directory> "local-collection_name" "new-collection-name"`
+```
+./scripts/import-remote "list,of,hostnames" <path-to-backup-directory> "local-collection_name" "new-collection-name"
+````
 
-    Note: you'll need access to the remote Mongo Cloud team account to get the hostnames/passwords required for this command.
+> Note: you'll need access to the remote Mongo Cloud team account to get the hostnames/passwords required for this command.
 
 3. Verify that the import worked successfully (eg. make sure the number of records exceeds the existing collection, and that data is populated correctly)
 
@@ -54,7 +64,7 @@ Once you've done this and have confirmed it works as expected, you can push the 
 
 6. Update the cached facets, eg: visit `/past-grants-search/build-facets`
 
-    This will store an JSON object with pre-calculated facets (to speed up the initial search without queries, and to use for comparisons on the frontend) in the environment's database.
+This will store an JSON object with pre-calculated facets (to speed up the initial search without queries, and to use for comparisons on the frontend) in the environment's database.
 
 ## Misc / other
 
