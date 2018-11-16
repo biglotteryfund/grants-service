@@ -65,7 +65,8 @@ router.route('/:id').get(async (req, res) => {
         const mongo = await connectToMongo();
         const result = await fetchGrantById(
             mongo.grantsCollection,
-            req.params.id
+            req.params.id,
+            req.query.locale
         );
         mongo.client.close();
         res.json({ result });
