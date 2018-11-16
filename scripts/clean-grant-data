@@ -91,29 +91,23 @@ const rename = data => {
         amountAwarded: parseFloat(data['Amount Awarded']),
         awardDate: data['Award Date'],
         plannedDates: [plannedDates],
-        recipientOrganization: [
-            {
-                id: data['Recipient Org:Identifier'],
-                name: data['Recipient Org:Name'],
-                charityNumber: data['Recipient Org:Charity Number'] || undefined,
-                companyNumber: data['Recipient Org:Company Number'] || undefined,
-                // @TODO https://github.com/OpenDataServices/grantnav/issues/490
-                organisationType: data['organisationType'],
-                organisationSubtype: data['organisationSubtype']
-            }
-        ],
-        fundingOrganization: [
-            {
-                id: data['Funding Org:Identifier'],
-                name: data['Funding Org:Name'],
-            }
-        ],
-        grantProgramme: [
-            {
-                code: data['Grant Programme:Code'],
-                title: data['Grant Programme:Title']
-            }
-        ],
+        recipientOrganization: {
+            id: data['Recipient Org:Identifier'],
+            name: data['Recipient Org:Name'],
+            charityNumber: data['Recipient Org:Charity Number'] || undefined,
+            companyNumber: data['Recipient Org:Company Number'] || undefined,
+            // @TODO https://github.com/OpenDataServices/grantnav/issues/490
+            organisationType: data['organisationType'],
+            organisationSubtype: data['organisationSubtype']
+        },
+        fundingOrganization: {
+            id: data['Funding Org:Identifier'],
+            name: data['Funding Org:Name']
+        },
+        grantProgramme: {
+            code: data['Grant Programme:Code'],
+            title: data['Grant Programme:Title']
+        },
         dateModified: data['Last modified']
     };
 
@@ -171,12 +165,9 @@ const rename = data => {
 const fixHeroesReturnTypo = data => {
     const wrong = 'This is a programme for individual veterans as opposed to organisaitons';
     const right = 'This is a programme for individual veterans as opposed to organisations';
-    data.recipientOrganization = data.recipientOrganization.map(org => {
-        if (org.name.indexOf(wrong) !== -1) {
-            org.name = org.name.replace(wrong, right);
-        }
-        return org;
-    });
+    if (data.recipientOrganization.name.indexOf(wrong) !== -1) {
+        data.recipientOrganization.name = data.recipientOrganization.name.replace(wrong, right);
+    }
     return data;
 };
 
@@ -189,14 +180,11 @@ const programmesToRename = [
     }
 ];
 const renameProgrammes = data => {
-    data.grantProgramme = data.grantProgramme.map(programme => {
-        const shouldRename = programmesToRename.find(p => p.from === programme.title);
-        if (shouldRename) {
-            programme.titleInternal = programme.title;
-            programme.title = shouldRename.to;
-        }
-        return programme;
-    });
+    const shouldRename = programmesToRename.find(p => p.from === data.grantProgramme.title);
+    if (shouldRename) {
+        data.grantProgramme.titleInternal = data.grantProgramme.title;
+        data.grantProgramme.title = shouldRename.to;
+    }
     return data;
 };
 
@@ -263,9 +251,8 @@ const addLocations = data => {
 // Check to see if we need to add a new programme mapping
 const unknownProgrammes = [];
 const checkForNewProgrammes = data => {
-    const mainProgramme = data.grantProgramme[0];
-    if (mainProgramme && knownProgrammes.indexOf(mainProgramme.code) === -1) {
-        unknownProgrammes.push(mainProgramme.code);
+    if (data.grantProgramme && knownProgrammes.indexOf(data.grantProgramme.code) === -1) {
+        unknownProgrammes.push(data.grantProgramme.code);
     }
     return data;
 };
@@ -295,7 +282,7 @@ getStream().pipe(es.mapSync((data) => {
     // Remove data from internal-only programmes
     // (eg. transfer of funds)
     const invalidProgrammeCodes = ['PFP1'];
-    const mainProgrammeCode = get(cleaned, 'grantProgramme[0].code');
+    const mainProgrammeCode = get(cleaned, 'grantProgramme.code');
     if (!includes(invalidProgrammeCodes, mainProgrammeCode)) {
         outputFileStream.write(JSON.stringify(cleaned) + '\n');
     } else {
