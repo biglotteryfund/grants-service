@@ -124,32 +124,60 @@ function buildSortMeta(sort, queryParams) {
     };
 }
 
-function addActiveStatus(grant) {
+// Add an active status to currently-running projects
+function addActiveStatus({ grant, locale }) {
     const endDate = get(grant, 'plannedDates[0].endDate', false);
-
     if (endDate) {
         grant.isActive = !moment(endDate).isBefore(now);
     }
-
-    return grant;
+    return { grant, locale };
 }
 
-function addFundingProgrammeDetail(grant) {
-    const mainProgramme = head(grant.grantProgramme);
+// Try to add a URL to the funding programme where one matches
+function addFundingProgrammeDetail({ grant, locale }) {
+    const mainProgramme = grant.grantProgramme;
     if (mainProgramme) {
         const programme = get(fundingProgrammes, mainProgramme.code, false);
         if (programme && programme.urlPath) {
             mainProgramme.url = programme.urlPath;
         }
     }
-    return grant;
+    return { grant, locale };
 }
 
-function addGrantDetail(grant) {
-    return flow(
+// Translate the organisation types in the data itself as well as the facets
+function translateOrgTypes({ grant, locale }) {
+    grant.recipientOrganization.organisationType = getTranslation(
+        'orgTypes',
+        grant.recipientOrganization.organisationType,
+        locale
+    );
+    grant.recipientOrganization.organisationSubtype = getTranslation(
+        'orgTypes',
+        grant.recipientOrganization.organisationSubtype,
+        locale
+    );
+    return { grant, locale };
+}
+
+// @TODO establish if this fixes slow queries and stop using arrays at both ends
+// Hackily re-create existing array structure to avoid rewriting templates for now
+function makeObjectsArrays({ grant, locale }) {
+    ['recipientOrganization', 'fundingOrganization', 'grantProgramme'].forEach(field => {
+        grant[field] = [grant[field]];
+    });
+    return { grant, locale };
+}
+
+// Append/extend a few more fields once we've retrieved them
+function addGrantDetail(grant, locale) {
+    const detail = flow(
         addActiveStatus,
-        addFundingProgrammeDetail
-    )(grant);
+        addFundingProgrammeDetail,
+        translateOrgTypes,
+        makeObjectsArrays
+    )({ grant: grant, locale: locale });
+    return detail.grant;
 }
 
 function makeDateRange(monthsAgo) {
@@ -474,7 +502,7 @@ function buildFacetCriteria() {
         grantProgramme: [
             {
                 $group: {
-                    _id: { $arrayElemAt: ['$grantProgramme.title', 0] },
+                    _id: '$grantProgramme.title',
                     count: { $sum: 1 }
                 }
             },
@@ -486,18 +514,8 @@ function buildFacetCriteria() {
             {
                 $group: {
                     _id: {
-                        type: {
-                            $arrayElemAt: [
-                                '$recipientOrganization.organisationType',
-                                0
-                            ]
-                        },
-                        subtype: {
-                            $arrayElemAt: [
-                                '$recipientOrganization.organisationSubtype',
-                                0
-                            ]
-                        },
+                        type: '$recipientOrganization.organisationType',
+                        subtype: '$recipientOrganization.organisationSubtype',
                     },
                     count: { $sum: 1 },
                 }
@@ -733,7 +751,7 @@ async function fetchGrants(mongo, queryParams) {
         .toArray();
 
     // Add any final fields we need before output
-    grantsResult = grantsResult.map(addGrantDetail);
+    grantsResult = grantsResult.map(grant => addGrantDetail(grant, locale));
 
     let facets;
     if (!queryParams.related) {
@@ -801,10 +819,10 @@ async function fetchGrants(mongo, queryParams) {
  * We don't want to expose this in public urls
  * so we prepend this when doing lookups
  */
-async function fetchGrantById(collection, id) {
+async function fetchGrantById(collection, id, locale = 'en') {
     const fullID = `${ID_PREFIX}${id}`;
     let result = await collection.findOne({ id: fullID });
-    result = result && addGrantDetail(result);
+    result = result && addGrantDetail(result, locale);
     return result;
 }
 
