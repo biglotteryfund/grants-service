@@ -32,7 +32,7 @@ const COMMON_WORDS = [
     'grants',
     'school',
     'award',
-    'local',
+    'local'
 ];
 
 /**
@@ -54,7 +54,7 @@ const DEFAULT_SORT = {
 };
 
 const DEFAULT_SORT_QUERY = {
-    criteria:  { score: { $meta: 'textScore' } },
+    criteria: { score: { $meta: 'textScore' } },
     value: 'score|desc'
 };
 
@@ -85,16 +85,14 @@ function determineSort(queryParams) {
     return sort;
 }
 
-
 function buildSortMeta(sort, queryParams) {
-
     const locale = queryParams.locale || 'en';
     const langKey = 'sortOptions';
 
     const sortOptions = [
         {
             label: getTranslation(langKey, 'Most recent', locale),
-            value: 'awardDate|desc',
+            value: 'awardDate|desc'
         },
         {
             label: getTranslation(langKey, 'Oldest first', locale),
@@ -118,7 +116,9 @@ function buildSortMeta(sort, queryParams) {
     }
 
     return {
-        defaultSort: queryParams.q ? DEFAULT_SORT_QUERY.value : DEFAULT_SORT.value,
+        defaultSort: queryParams.q
+            ? DEFAULT_SORT_QUERY.value
+            : DEFAULT_SORT.value,
         activeSort: sort.value,
         sortOptions: sortOptions
     };
@@ -163,9 +163,11 @@ function translateOrgTypes({ grant, locale }) {
 // @TODO establish if this fixes slow queries and stop using arrays at both ends
 // Hackily re-create existing array structure to avoid rewriting templates for now
 function makeObjectsArrays({ grant, locale }) {
-    ['recipientOrganization', 'fundingOrganization', 'grantProgramme'].forEach(field => {
-        grant[field] = [grant[field]];
-    });
+    ['recipientOrganization', 'fundingOrganization', 'grantProgramme'].forEach(
+        field => {
+            grant[field] = [grant[field]];
+        }
+    );
     return { grant, locale };
 }
 
@@ -305,7 +307,9 @@ async function buildMatchCriteria(queryParams) {
      */
     if (queryParams.recipient) {
         match.$and.push({
-            'recipientOrganization.id': queryParams.recipient
+            'recipientOrganization.id': {
+                $eq: queryParams.recipient
+            }
         });
     }
 
@@ -401,10 +405,11 @@ async function buildMatchCriteria(queryParams) {
      * Country
      */
     const validCountries = ['England', 'Northern Ireland', 'Scotland', 'Wales'];
-    if (queryParams.country && validCountries.indexOf(queryParams.country) !== -1) {
-        match.$and.push(
-            { 'beneficiaryLocation.country': queryParams.country },
-        );
+    if (
+        queryParams.country &&
+        validCountries.indexOf(queryParams.country) !== -1
+    ) {
+        match.$and.push({ 'beneficiaryLocation.country': queryParams.country });
     }
 
     /**
@@ -458,7 +463,6 @@ const AMOUNT_AWARDED_BUCKETS = [0, 10000, 50000, 100000, 1000000, Infinity];
 
 function buildFacetCriteria() {
     return {
-
         countries: [
             {
                 $group: {
@@ -515,18 +519,23 @@ function buildFacetCriteria() {
                 $group: {
                     _id: {
                         type: '$recipientOrganization.organisationType',
-                        subtype: '$recipientOrganization.organisationSubtype',
+                        subtype: '$recipientOrganization.organisationSubtype'
                     },
-                    count: { $sum: 1 },
+                    count: { $sum: 1 }
                 }
             },
             { $sort: { _id: 1 } },
             { $project: { count: 1, label: '$_id.type', value: '$_id.type' } }
-        ],
+        ]
     };
 }
 
-async function fetchFacets(collection, matchCriteria = {}, locale, grantResults = false) {
+async function fetchFacets(
+    collection,
+    matchCriteria = {},
+    locale,
+    grantResults = false
+) {
     const facetCriteria = buildFacetCriteria();
 
     /**
@@ -587,16 +596,18 @@ async function fetchFacets(collection, matchCriteria = {}, locale, grantResults 
     });
     for (let parentGroup in orgGroups) {
         let total = 0;
-        orgGroups[parentGroup] = orgGroups[parentGroup].map(group => {
-            total += group.count;
-            const name = group._id.subtype;
-            return {
-                _id: name,
-                count: group.count,
-                label: name,
-                value: name
-            }
-        }).sort((a, b) => a.label > b.label);
+        orgGroups[parentGroup] = orgGroups[parentGroup]
+            .map(group => {
+                total += group.count;
+                const name = group._id.subtype;
+                return {
+                    _id: name,
+                    count: group.count,
+                    label: name,
+                    value: name
+                };
+            })
+            .sort((a, b) => a.label > b.label);
 
         // Add an overall count at the start
         const parentAll = `${parentGroup}: All`;
@@ -607,8 +618,9 @@ async function fetchFacets(collection, matchCriteria = {}, locale, grantResults 
             value: parentGroup
         });
 
-        orgGroups[parentGroup] = orgGroups[parentGroup]
-            .map(translateLabels('orgTypes', locale));
+        orgGroups[parentGroup] = orgGroups[parentGroup].map(
+            translateLabels('orgTypes', locale)
+        );
     }
     facets.orgType = orgGroups;
 
@@ -669,6 +681,53 @@ async function fetchFacets(collection, matchCriteria = {}, locale, grantResults 
     return facets;
 }
 
+function buildPagination(
+    currentPage,
+    perPageCount,
+    skipCount,
+    totalGrantsForQuery,
+    queryParams
+) {
+    return {
+        currentPage: currentPage,
+        perPageCount: perPageCount,
+        skipCount: skipCount,
+        totalPages: Math.ceil(totalGrantsForQuery / perPageCount),
+        get prevPageParams() {
+            if (this.totalPages > 1 && this.currentPage > 1) {
+                return querystring.stringify(
+                    Object.assign({}, queryParams, {
+                        page: this.currentPage - 1
+                    })
+                );
+            }
+            return undefined;
+        },
+        get nextPageParams() {
+            if (this.totalPages > 1 && this.currentPage < this.totalPages) {
+                return querystring.stringify(
+                    Object.assign({}, queryParams, {
+                        page: this.currentPage + 1
+                    })
+                );
+            }
+            return undefined;
+        }
+    };
+}
+
+async function fetchTotalAwarded(grantsCollection, matchCriteria) {
+    let totalAwarded = await grantsCollection
+        .aggregate([
+            { $match: matchCriteria },
+            { $group: { _id: null, sum: { $sum: '$amountAwarded' } } },
+            { $project: { _id: 0, sum: 1 } }
+        ])
+        .toArray();
+    totalAwarded = get(totalAwarded, '[0].sum', false);
+    return totalAwarded;
+}
+
 /**
  * Fetch grants
  */
@@ -726,20 +785,18 @@ async function fetchGrants(mongo, queryParams) {
     }
 
     /**
-     * Perform a separate (fast) count query to get the total results.
+     * Compute totals
      */
     const totalGrants = await mongo.grantsCollection.find({}).count();
+
     const totalGrantsForQuery = await mongo.grantsCollection
         .find(matchCriteria)
         .count();
-    let totalAwarded = await mongo.grantsCollection
-        .aggregate([
-            { $match: matchCriteria },
-            { $group: { _id: null, sum: { $sum: '$amountAwarded' } } },
-            { $project: { _id: 0, sum: 1 } }
-        ])
-        .toArray();
-    totalAwarded = get(totalAwarded, '[0].sum', false);
+
+    const totalAwarded = await fetchTotalAwarded(
+        mongo.grantsCollection,
+        matchCriteria
+    );
 
     /**
      * Perform query for grant results
@@ -764,7 +821,12 @@ async function fetchGrants(mongo, queryParams) {
                 .toArray();
             facets = get(head(cachedFacets), locale);
         } else {
-            facets = await fetchFacets(mongo.grantsCollection, matchCriteria, locale, grantsResult);
+            facets = await fetchFacets(
+                mongo.grantsCollection,
+                matchCriteria,
+                locale,
+                grantsResult
+            );
         }
     }
 
@@ -778,37 +840,106 @@ async function fetchGrants(mongo, queryParams) {
             totalAwarded: totalAwarded,
             query: queryParams,
             sort: buildSortMeta(sort, queryParams),
-            pagination: {
-                currentPage: currentPage,
-                perPageCount: perPageCount,
-                skipCount: skipCount,
-                totalPages: Math.ceil(totalGrantsForQuery / perPageCount),
-                get prevPageParams() {
-                    if (this.totalPages > 1 && this.currentPage > 1) {
-                        return querystring.stringify(
-                            Object.assign({}, queryParams, {
-                                page: this.currentPage - 1
-                            })
-                        );
-                    }
-                    return undefined;
-                },
-                get nextPageParams() {
-                    if (
-                        this.totalPages > 1 &&
-                        this.currentPage < this.totalPages
-                    ) {
-                        return querystring.stringify(
-                            Object.assign({}, queryParams, {
-                                page: this.currentPage + 1
-                            })
-                        );
-                    }
-                    return undefined;
-                }
-            }
+            pagination: buildPagination(
+                currentPage,
+                perPageCount,
+                skipCount,
+                totalGrantsForQuery,
+                queryParams
+            ),
         },
         facets: facets,
+        results: grantsResult
+    };
+}
+
+async function fetchGrantByRecipient(
+    grantsCollection,
+    recipientId,
+    queryParams
+) {
+    const perPageCount =
+        (queryParams.limit && parseInt(queryParams.limit)) || 50;
+    const pageParam = queryParams.page && parseInt(queryParams.page);
+    const currentPage = pageParam > 1 ? pageParam : 1;
+    const skipCount = perPageCount * (currentPage - 1);
+    const locale = queryParams.locale || 'en';
+
+    const matchCriteria = await buildMatchCriteria({
+        recipient: recipientId
+    });
+
+    /**
+     * Construct the aggregation pipeline
+     * Includes stripping 360Giving organisation prefix
+     * from the public ID field.
+     */
+    const resultsPipeline = [
+        { $match: matchCriteria },
+        { $sort: { awardDate: -1, 'recipientOrganization.id': 1 } },
+        {
+            $addFields: {
+                id: {
+                    $arrayElemAt: [{ $split: ['$id', ID_PREFIX] }, 1]
+                }
+            }
+        }
+    ];
+
+    let grantsResult = await grantsCollection
+        .aggregate(resultsPipeline, { allowDiskUse: true })
+        .skip(skipCount)
+        .limit(perPageCount)
+        .toArray();
+
+    // Add any final fields we need before output
+    grantsResult = grantsResult.map(grant => addGrantDetail(grant, locale));
+
+    const facetsResult = await grantsCollection
+        .aggregate([
+            { $match: matchCriteria },
+            {
+                $facet: {
+                    grantProgramme: [
+                        {
+                            $group: {
+                                _id: '$grantProgramme.title',
+                                count: { $sum: 1 }
+                            }
+                        },
+                        { $sort: { _id: 1 } },
+                        { $project: { count: 1, label: '$_id', value: '$_id' } }
+                    ]
+                }
+            }
+        ])
+        .toArray();
+
+    /**
+     * Compute totals
+     */
+    const totalGrantsForQuery = await grantsCollection
+        .find(matchCriteria)
+        .count();
+
+    const totalAwarded = await fetchTotalAwarded(
+        grantsCollection,
+        matchCriteria
+    );
+
+    return {
+        meta: {
+            totalResults: totalGrantsForQuery,
+            totalAwarded: totalAwarded,
+            pagination: buildPagination(
+                currentPage,
+                perPageCount,
+                skipCount,
+                totalGrantsForQuery,
+                queryParams
+            ),
+        },
+        facets: head(facetsResult),
         results: grantsResult
     };
 }
@@ -829,5 +960,6 @@ async function fetchGrantById(collection, id, locale = 'en') {
 module.exports = {
     fetchGrants,
     fetchGrantById,
+    fetchGrantByRecipient,
     fetchFacets
 };
