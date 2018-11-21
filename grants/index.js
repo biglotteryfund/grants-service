@@ -19,7 +19,8 @@ router.route('/').get(async (req, res) => {
     try {
         res.locals.timings.start('fetch-grants');
         const mongo = await connectToMongo();
-        const results = await fetchGrants(mongo, req.query);
+        const { locale, ...queryParams } = req.query;
+        const results = await fetchGrants(mongo, locale, queryParams);
         mongo.client.close();
         res.locals.timings.end('fetch-grants');
         res.json(results);
@@ -37,7 +38,7 @@ router.get('/build-facets', async (req, res) => {
     try {
         const mongo = await connectToMongo();
 
-        const latestGrant = await fetchGrants(mongo, {
+        const latestGrant = await fetchGrants(mongo, 'en', {
             limit: 1,
             sort: 'awardDate|desc'
         });

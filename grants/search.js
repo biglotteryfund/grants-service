@@ -1,5 +1,14 @@
 'use strict';
-const { difference, flow, get, groupBy, head, sortBy } = require('lodash');
+const {
+    compact,
+    difference,
+    flow,
+    get,
+    groupBy,
+    has,
+    head,
+    sortBy
+} = require('lodash');
 const request = require('request-promise-native');
 const querystring = require('querystring');
 const moment = require('moment');
@@ -731,13 +740,12 @@ async function fetchTotalAwarded(grantsCollection, matchCriteria) {
 /**
  * Fetch grants
  */
-async function fetchGrants(mongo, queryParams) {
+async function fetchGrants(mongo, locale = 'en', queryParams) {
     const perPageCount =
         (queryParams.limit && parseInt(queryParams.limit)) || 50;
     const pageParam = queryParams.page && parseInt(queryParams.page);
     const currentPage = pageParam > 1 ? pageParam : 1;
     const skipCount = perPageCount * (currentPage - 1);
-    const locale = queryParams.locale || 'en';
 
     /**
      * Handle directly entered postcodes
@@ -756,14 +764,31 @@ async function fetchGrants(mongo, queryParams) {
     const sort = determineSort(queryParams);
     const matchCriteria = await buildMatchCriteria(queryParams);
 
+    const hasOnlyQuery = name =>
+        Object.keys(queryParams).length === 1 && has(queryParams, name);
+
     /**
      * Construct the aggregation pipeline
      * Includes stripping 360Giving organisation prefix
      * from the public ID field.
      */
-    const resultsPipeline = [
+    const resultsPipeline = compact([
         { $match: matchCriteria },
+
+        /**
+         * Provide a hint to use a more efficient query for location searches
+         * https://jira.mongodb.org/browse/SERVER-7568?focusedCommentId=814169&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-814169
+         * @TODO: Reduce the specificity of this
+         */
+        hasOnlyQuery('localAuthority') ||
+        hasOnlyQuery('westminsterConstituency')
+            ? { $project: { _id: 0 } }
+            : null,
+
         { $sort: sort.criteria },
+        { $limit: perPageCount },
+        { $skip: skipCount },
+
         {
             $addFields: {
                 id: {
@@ -771,7 +796,7 @@ async function fetchGrants(mongo, queryParams) {
                 }
             }
         }
-    ];
+    ]);
 
     /**
      * Expose the search score as a custom field
@@ -803,8 +828,6 @@ async function fetchGrants(mongo, queryParams) {
      */
     let grantsResult = await mongo.grantsCollection
         .aggregate(resultsPipeline, { allowDiskUse: true })
-        .skip(skipCount)
-        .limit(perPageCount)
         .toArray();
 
     // Add any final fields we need before output
@@ -846,7 +869,7 @@ async function fetchGrants(mongo, queryParams) {
                 skipCount,
                 totalGrantsForQuery,
                 queryParams
-            ),
+            )
         },
         facets: facets,
         results: grantsResult
@@ -937,7 +960,7 @@ async function fetchGrantByRecipient(
                 skipCount,
                 totalGrantsForQuery,
                 queryParams
-            ),
+            )
         },
         facets: head(facetsResult),
         results: grantsResult
