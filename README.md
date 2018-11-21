@@ -52,7 +52,7 @@ Once you've done this and have confirmed it works as expected, you can push the 
 
 ```
 ./scripts/import-remote "list,of,hostnames" <path-to-backup-directory> "local-collection_name" "new-collection-name"
-````
+```
 
 > Note: you'll need access to the remote Mongo Cloud team account to get the hostnames/passwords required for this command.
 
