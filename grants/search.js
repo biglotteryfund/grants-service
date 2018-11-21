@@ -7,6 +7,7 @@ const {
     groupBy,
     has,
     head,
+    isEmpty,
     sortBy
 } = require('lodash');
 const request = require('request-promise-native');
@@ -207,19 +208,11 @@ function makeDateRange(monthsAgo) {
  * @param {object} queryParams
  */
 async function buildMatchCriteria(queryParams) {
-    const match = {};
+    let match = {};
 
     match.$and = [];
     match.$or = [];
 
-    /**
-     * Default criteria
-     * $facet pipelines must have at least one match in order to
-     * use the index so we set something here that matches everything.
-     */
-    match.$and.push({
-        awardDate: { $exists: true }
-    });
     /**
      * Grant amount
      * Allow a min and max amount separated by a pipe.
@@ -421,12 +414,28 @@ async function buildMatchCriteria(queryParams) {
         match.$and.push({ 'beneficiaryLocation.country': queryParams.country });
     }
 
+    if (match.$and.length === 0) delete match.$and;
+
+    const ands = get(match, '$and', []);
+    const ors = get(match, '$or', []);
+
     /**
      * $and and $or cannot be empty arrays
      * so delete them if they are empty
      */
-    if (match.$and.length === 0) delete match.$and;
-    if (match.$or.length === 0) delete match.$or;
+    if (ands.length === 0) {
+        delete match.$and;
+    }
+    if (ors.length === 0) {
+        delete match.$or;
+    }
+
+    /**
+     * If this is a single facet query then flatten the $and results
+     */
+    if (ands.length === 1 && ors.length === 0) {
+        match = match.$and[0];
+    }
 
     return match;
 }
@@ -546,6 +555,13 @@ async function fetchFacets(
     grantResults = false
 ) {
     const facetCriteria = buildFacetCriteria();
+
+    /**
+     * Default criteria
+     * $facet pipelines must have at least one match in order to
+     * use the index so we set something here that matches everything.
+     */
+    matchCriteria = isEmpty(matchCriteria) ? { awardDate: { $exists: true } } : matchCriteria;
 
     /**
      * Perform a second query with $facet pipelines
@@ -775,13 +791,15 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
     const resultsPipeline = compact([
         { $match: matchCriteria },
 
+
         /**
          * Provide a hint to use a more efficient query for location searches
          * https://jira.mongodb.org/browse/SERVER-7568?focusedCommentId=814169&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-814169
          * @TODO: Reduce the specificity of this
          */
         hasOnlyQuery('localAuthority') ||
-        hasOnlyQuery('westminsterConstituency')
+        hasOnlyQuery('westminsterConstituency') ||
+        hasOnlyQuery('programme')
             ? { $project: { _id: 0 } }
             : null,
 
