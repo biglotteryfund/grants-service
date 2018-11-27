@@ -60,7 +60,7 @@
     "csv-parser": "1.12.1",
     "eslint": "5.7.0",
     "eslint-plugin-node": "7.0.1",
-    "event-stream": "^3.3.4",
+    "event-stream": "3.3.4",
     "jest": "23.6.0",
     "jest-environment-node": "^23.4.0",
     "mongodb-memory-server": "2.4.3",
