@@ -174,11 +174,15 @@ const fixHeroesReturnTypo = data => {
 };
 
 // Rename funding programmes from their FMS/internal name
-// to a public-facing one
+// to a public-facing one, or fix a typo / case inconsistency
 const programmesToRename = [
     {
         from: 'UK Accelerating Ideas',
         to: 'UK Portfolio'
+    },
+    {
+        from: 'Fulfilling lives: HeadStart',
+        to: 'Fulfilling Lives: HeadStart'
     }
 ];
 const renameProgrammes = data => {
