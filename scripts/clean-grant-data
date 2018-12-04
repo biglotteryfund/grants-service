@@ -47,12 +47,14 @@ const parseDates = data => {
     ];
     dateFields.forEach(dateField => {
         if (data[dateField]) {
-            // We can't specify a format here because the source data uses different formats
-            // eg. older data is 2004-04-16 and some of it uses 8/17/15
-            let d = moment(data[dateField].trim());
-            data[dateField] = {
-                $date: d.toDate()
-            };
+            // We specify several parsing formats here because the source data uses different formats
+            // eg. older data is 2004-04-16 and the rest uses 8/17/15
+            const parsedDate = moment(data[dateField].trim(), ["MM/DD/YYYY", "YYYY-MM-DD"]);
+            if (parsedDate.isValid()) {
+                data[dateField] = {
+                    $date: parsedDate.toDate()
+                };
+            }
         }
     });
     return data;
