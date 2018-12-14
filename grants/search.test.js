@@ -49,9 +49,14 @@ describe('Past Grants Search', () => {
         })).toMatchSnapshot();
         expect(grants.results.length).toBe(testLimit);
     });
+
     it('should return second page of grants', async () => {
         const testLimit = 5;
         const grants = await queryGrants({ limit: testLimit, page: 2 });
+        expect(grants.results.map(result => {
+            delete result._id;
+            return result;
+        })).toMatchSnapshot();
         expect(grants.results.length).toBe(testLimit);
     });
     

@@ -786,8 +786,6 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
             : null,
 
         { $sort: sort.criteria },
-        { $limit: perPageCount },
-        { $skip: skipCount },
 
         {
             $addFields: {
@@ -828,6 +826,8 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
      */
     let grantsResult = await mongo.grantsCollection
         .aggregate(resultsPipeline, { allowDiskUse: true })
+        .skip(skipCount)
+        .limit(perPageCount)
         .toArray();
 
     // Add any final fields we need before output

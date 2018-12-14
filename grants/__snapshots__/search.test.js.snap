@@ -259,3 +259,265 @@ Array [
   },
 ]
 `;
+
+exports[`Past Grants Search should return second page of grants 1`] = `
+Array [
+  Object {
+    "amountAwarded": 3657,
+    "awardDate": 2004-03-31T23:00:00.000Z,
+    "beneficiaryLocation": Array [
+      Object {
+        "geoCode": "E05007307",
+        "geoCodeType": "WD",
+        "name": "Worplesdon",
+      },
+      Object {
+        "geoCode": "E07000209",
+        "geoCodeType": "CMLAD",
+        "name": "Guildford",
+      },
+    ],
+    "currency": "GBP",
+    "dateModified": 2016-05-11T12:54:00.000Z,
+    "description": "This cricket club will develop the skills of its younger members through the provision of new training equipment.",
+    "fundingOrganization": Array [
+      Array [
+        Object {
+          "id": "360G-blf",
+          "name": "The Big Lottery Fund",
+        },
+      ],
+    ],
+    "grantProgramme": Array [
+      Array [
+        Object {
+          "code": "A4E2",
+          "title": "Awards for All",
+        },
+      ],
+    ],
+    "id": "A4E_2_010103421",
+    "plannedDates": Array [
+      Object {
+        "startDate": 2004-04-27T23:00:00.000Z,
+      },
+    ],
+    "recipientOrganization": Array [
+      Array [
+        Object {
+          "id": "360G-blf-org-OldWokingCricketClubCharity:CharitableUnincorporatedAssociation151962",
+          "name": "Old Woking Cricket Club",
+          "organisationType": "Charity",
+        },
+      ],
+    ],
+    "title": "New Equipment",
+  },
+  Object {
+    "amountAwarded": 4992,
+    "awardDate": 2004-03-31T23:00:00.000Z,
+    "beneficiaryLocation": Array [
+      Object {
+        "geoCode": "E05003995",
+        "geoCodeType": "WD",
+        "name": "Danehill/Fletching/Nutley",
+      },
+      Object {
+        "geoCode": "E07000065",
+        "geoCodeType": "CMLAD",
+        "name": "Wealden",
+      },
+    ],
+    "currency": "GBP",
+    "dateModified": 2016-05-11T11:47:00.000Z,
+    "description": "Children from the local pre-school and primary school will have the chance to try tennis for the first time and attend training sessions run by qualified coaches.",
+    "fundingOrganization": Array [
+      Array [
+        Object {
+          "id": "360G-blf",
+          "name": "The Big Lottery Fund",
+        },
+      ],
+    ],
+    "grantProgramme": Array [
+      Array [
+        Object {
+          "code": "A4E2",
+          "title": "Awards for All",
+        },
+      ],
+    ],
+    "id": "A4E_2_010106943",
+    "plannedDates": Array [
+      Object {
+        "startDate": 2004-04-27T23:00:00.000Z,
+      },
+    ],
+    "recipientOrganization": Array [
+      Array [
+        Object {
+          "id": "360G-blf-org-NutleyTennisandSquashClubCharity:CharitableUnincorporatedAssociation122004",
+          "name": "Nutley Tennis and Squash Club",
+          "organisationType": "Charity",
+        },
+      ],
+    ],
+    "title": "New Equipment",
+  },
+  Object {
+    "amountAwarded": 3509,
+    "awardDate": 2004-03-31T23:00:00.000Z,
+    "beneficiaryLocation": Array [
+      Object {
+        "geoCode": "E05004269",
+        "geoCodeType": "WD",
+        "name": "Great Dunmow South",
+      },
+      Object {
+        "geoCode": "E07000077",
+        "geoCodeType": "CMLAD",
+        "name": "Uttlesford",
+      },
+    ],
+    "currency": "GBP",
+    "dateModified": 2016-05-11T12:04:00.000Z,
+    "description": "This association promotes access to the countryside and birdwatching for disabled people. It will buy a portable exhibition stand to display literature at the British Bird Fair and encourage more people to join the organisation.",
+    "fundingOrganization": Array [
+      Array [
+        Object {
+          "id": "360G-blf",
+          "name": "The Big Lottery Fund",
+        },
+      ],
+    ],
+    "grantProgramme": Array [
+      Array [
+        Object {
+          "code": "A4E2",
+          "title": "Awards for All",
+        },
+      ],
+    ],
+    "id": "A4E_2_010107069",
+    "plannedDates": Array [
+      Object {
+        "startDate": 2004-04-27T23:00:00.000Z,
+      },
+    ],
+    "recipientOrganization": Array [
+      Array [
+        Object {
+          "charityNumber": "1091755",
+          "id": "GB-CHC-1091755",
+          "name": "Birding For All",
+          "organisationType": "Charity",
+        },
+      ],
+    ],
+    "title": "Promotion Equipment",
+  },
+  Object {
+    "amountAwarded": 4980,
+    "awardDate": 2004-03-31T23:00:00.000Z,
+    "beneficiaryLocation": Array [
+      Object {
+        "geoCode": "E05003996",
+        "geoCodeType": "WD",
+        "name": "East Dean",
+      },
+      Object {
+        "geoCode": "E07000065",
+        "geoCodeType": "CMLAD",
+        "name": "Wealden",
+      },
+    ],
+    "currency": "GBP",
+    "dateModified": 2016-05-11T12:54:00.000Z,
+    "description": "Blind and partially sighted people will have the opportunity to try a range of arts and craft activities specifically aimed at those with visual impairments. The project will encourage participants to get involved in more creative activities and try to combat social exclusion that can be felt by blind or partially sighted people.",
+    "fundingOrganization": Array [
+      Array [
+        Object {
+          "id": "360G-blf",
+          "name": "The Big Lottery Fund",
+        },
+      ],
+    ],
+    "grantProgramme": Array [
+      Array [
+        Object {
+          "code": "A4E2",
+          "title": "Awards for All",
+        },
+      ],
+    ],
+    "id": "A4E_2_010106649",
+    "plannedDates": Array [
+      Object {
+        "startDate": 2004-04-27T23:00:00.000Z,
+      },
+    ],
+    "recipientOrganization": Array [
+      Array [
+        Object {
+          "charityNumber": "1110290",
+          "id": "GB-CHC-1110290",
+          "name": "View Craft",
+          "organisationType": "Charity",
+        },
+      ],
+    ],
+    "title": "Art and Craft Activities",
+  },
+  Object {
+    "amountAwarded": 4990,
+    "awardDate": 2004-03-31T23:00:00.000Z,
+    "beneficiaryLocation": Array [
+      Object {
+        "geoCode": "E05000407",
+        "geoCodeType": "WD",
+        "name": "Coombe Vale",
+      },
+      Object {
+        "geoCode": "E09000021",
+        "geoCodeType": "CMLAD",
+        "name": "Kingston upon Thames",
+      },
+    ],
+    "currency": "GBP",
+    "dateModified": 2016-05-11T11:40:00.000Z,
+    "description": "Taster sessions in badminton will be offered to primary school age children to encourage them to play the sport. Teachers will be given training so that an after school club can be set up. Students from a linked secondary school will be given the chance to obtain a Leaders Award so that they can run the after school clubs successfully.",
+    "fundingOrganization": Array [
+      Array [
+        Object {
+          "id": "360G-blf",
+          "name": "The Big Lottery Fund",
+        },
+      ],
+    ],
+    "grantProgramme": Array [
+      Array [
+        Object {
+          "code": "A4E2",
+          "title": "Awards for All",
+        },
+      ],
+    ],
+    "id": "A4E_2_010107678",
+    "plannedDates": Array [
+      Object {
+        "startDate": 2004-04-27T23:00:00.000Z,
+      },
+    ],
+    "recipientOrganization": Array [
+      Array [
+        Object {
+          "id": "360G-blf-org-SurreySchoolsBadmintonAssociationCharity:CharitableUnincorporatedAssociation131966",
+          "name": "Surrey Schools Badminton Association",
+          "organisationType": "Charity",
+        },
+      ],
+    ],
+    "title": "Setting up of after school clubs.",
+  },
+]
+`;
