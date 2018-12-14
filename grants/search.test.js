@@ -6,12 +6,13 @@ const indices = require('../lib/indices');
 
 const { fetchGrants } = require('./search');
 
+
 describe('Past Grants Search', () => {
     let connection;
     let db;
     let grantsCollection;
     let facetsCollection;
-
+    
     beforeAll(async () => {
         connection = await MongoClient.connect(
             global.__MONGO_URI__,
@@ -39,6 +40,21 @@ describe('Past Grants Search', () => {
     const queryGrants = async query =>
         fetchGrants({ grantsCollection, facetsCollection }, 'en', query);
 
+    it('should return first page of grants', async () => {
+        const testLimit = 5;
+        const grants = await queryGrants({ limit: testLimit });
+        expect(grants.results.map(result => {
+            delete result._id;
+            return result;
+        })).toMatchSnapshot();
+        expect(grants.results.length).toBe(testLimit);
+    });
+    it('should return second page of grants', async () => {
+        const testLimit = 5;
+        const grants = await queryGrants({ limit: testLimit, page: 2 });
+        expect(grants.results.length).toBe(testLimit);
+    });
+    
     it('should find grants by text search', async () => {
         const grants = await queryGrants({
             q: 'youth'
