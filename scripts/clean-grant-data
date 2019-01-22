@@ -54,6 +54,10 @@ const parseDates = data => {
                 data[dateField] = {
                     $date: parsedDate.toDate()
                 };
+            } else {
+                console.log('There was an error parsing the date', {
+                    date: data[dateField]
+                });
             }
         }
     });
@@ -285,14 +289,19 @@ getStream().pipe(es.mapSync((data) => {
         checkForNewProgrammes
     )(data);
 
-    // Remove data from internal-only programmes
-    // (eg. transfer of funds)
+    // Remove data from internal-only programmes (eg. transfer of funds)
     const invalidProgrammeCodes = ['PFP1'];
-    const mainProgrammeCode = get(cleaned, 'grantProgramme.code');
-    if (!includes(invalidProgrammeCodes, mainProgrammeCode)) {
-        outputFileStream.write(JSON.stringify(cleaned) + '\n');
+    const isFromInvalidProgramme = includes(invalidProgrammeCodes, get(cleaned, 'grantProgramme.code'));
+
+    // Remove grants which were not successful (eg. match funding)
+    const invalidGrantIds = ['360G-blf-0031057998', '360G-blf-0031059356'];
+    const isInvalidGrant = includes(invalidGrantIds, get(cleaned, 'id'));
+
+    // Append this cleaned data to a file if it's valid, else skip it
+    if (isFromInvalidProgramme || isInvalidGrant) {
+        console.log('Skipped output', cleaned, { isFromInvalidProgramme, isInvalidGrant });
     } else {
-        console.log('Skipped output', cleaned);
+        outputFileStream.write(JSON.stringify(cleaned) + '\n');
     }
 
 }).on('error', function (err) {

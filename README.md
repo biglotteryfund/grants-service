@@ -6,6 +6,9 @@ This service is a lambda function which queries an external MongoDB instance for
 
 You'll need to download at least one of the existing datasets from the [GrantNav publisher page](http://grantnav.threesixtygiving.org/publisher/360G-blf) for the Fund.
 
+Make sure the CSV doesn't have a space as the very first character as this has been known to break imports in mysterious ways
+(eg. `Amount Awarded` is not correctly parsed).
+
 Once you have a CSV file, you'll need to import it to your local mongo installation:
 
 ```
