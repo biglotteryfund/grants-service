@@ -1139,10 +1139,12 @@ module.exports = {
     },
     "IWF1": {
         "_id": "iwill fund",
-        "code": "IWF1"
+        "code": "IWF1",
+        "urlPath": "iwill-fund"
     },
     "IWF2": {
         "_id": "iwill fund",
-        "code": "IWF2"
+        "code": "IWF2",
+        "urlPath": "iwill-fund"
     }
 };
