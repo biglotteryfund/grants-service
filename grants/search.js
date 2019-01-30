@@ -812,6 +812,22 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
      */
     const totalGrants = await mongo.grantsCollection.find({}).count();
 
+    const getSingleGrant = async (showNewFirst = false) => {
+        return get(
+            await mongo.grantsCollection.find({})
+                .project({ awardDate: 1 })
+                .limit(1)
+                .sort({awardDate: showNewFirst ? -1 : 1})
+                .toArray(),
+            '[0].awardDate'
+        );
+    };
+
+    const grantDates = {
+        end: await getSingleGrant(true),
+        start: await getSingleGrant()
+    };
+
     const totalGrantsForQuery = await mongo.grantsCollection
         .find(matchCriteria)
         .count();
@@ -861,6 +877,7 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
         meta: {
             totalResults: totalGrantsForQuery,
             totalAwarded: totalAwarded,
+            grantDates: grantDates,
             query: queryParams,
             sort: buildSortMeta(sort, queryParams),
             pagination: buildPagination(
