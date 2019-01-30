@@ -9,6 +9,7 @@ const {
     head,
     sortBy
 } = require('lodash');
+const { get: getFp } = require('lodash/fp');
 const request = require('request-promise-native');
 const querystring = require('querystring');
 const moment = require('moment');
@@ -812,6 +813,20 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
      */
     const totalGrants = await mongo.grantsCollection.find({}).count();
 
+    const getDate = getFp('[0].awardDate');
+    const firstGrant = await mongo.grantsCollection.find({}).sort({
+        awardDate: -1 
+    }).limit(1).toArray();
+
+    const lastGrant = await mongo.grantsCollection.find({}).sort({
+        awardDate: 1
+    }).limit(1).toArray();
+    
+    const grantDates = {
+        end: getDate(firstGrant),
+        start: getDate(lastGrant)
+    };
+
     const totalGrantsForQuery = await mongo.grantsCollection
         .find(matchCriteria)
         .count();
@@ -861,6 +876,7 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
         meta: {
             totalResults: totalGrantsForQuery,
             totalAwarded: totalAwarded,
+            grantDates: grantDates,
             query: queryParams,
             sort: buildSortMeta(sort, queryParams),
             pagination: buildPagination(
