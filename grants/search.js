@@ -812,7 +812,20 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
      */
     const totalGrants = await mongo.grantsCollection.find({}).count();
 
-    const getSingleGrant = async (showNewFirst = false) => {
+    // Using get from lodash/fp?
+    const getDate = get('[0].awardDate');
+    const firstGrant = await mongo.grantsCollection.find({}).sort({
+        awardDate: -1 
+    }).limit(1).toArray();
+
+    const lastGrant = await mongo.grantsCollection.find({}).sort({
+        awardDate: 1
+    }).limit(1).toArray();
+    
+    const grantDates = {
+        end: getDate(firstGrant)
+        start: getDate(lastGrant)
+    };
         return get(
             await mongo.grantsCollection.find({})
                 .project({ awardDate: 1 })
