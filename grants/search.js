@@ -14,6 +14,7 @@ const querystring = require('querystring');
 const moment = require('moment');
 
 const { matchPostcode, numberWithCommas } = require('../lib/strings');
+const { GEOCODE_TYPES } = require('../lib/geocodes');
 const fundingProgrammes = require('../data/fundingProgrammes');
 const { getTranslation, translateLabels } = require('../translations');
 
@@ -43,19 +44,6 @@ const COMMON_WORDS = [
     'award',
     'local'
 ];
-
-/**
- * Country regular expressions
- * geocodes start with a letter prefix denoting the country
- * we use this to do country lookups.
- */
-
-// The type of geocode
-// Source: https://github.com/ThreeSixtyGiving/standard/blob/master/codelists/geoCodeType.csv
-const GEOCODE_TYPES = {
-    localAuthority: 'CMLAD',
-    constituency: 'WPC'
-};
 
 const DEFAULT_SORT = {
     criteria: { awardDate: -1 },
@@ -193,11 +181,10 @@ function addGrantDetail(grant, locale) {
 
 function makeDateRange(monthsAgo) {
     // Without .clone(), moment mutates the original $now
+    const end = now.clone();
     const start = now
         .clone()
-        .subtract(monthsAgo, 'months')
-        .toDate();
-    const end = now.toDate();
+        .subtract(monthsAgo, 'months');
     return [start, end];
 }
 
@@ -239,25 +226,22 @@ async function buildMatchCriteria(queryParams) {
      * Otherwise accept date range in the form yyyy-mm-dd|yyyy-mm-dd
      */
     if (queryParams.awardDate) {
+        let start, end;
         if (/last3months/i.test(queryParams.awardDate)) {
-            const [start, end] = makeDateRange(3);
-
-            match.$and.push({
-                awardDate: { $gte: start, $lt: end }
-            });
+            [start, end] = makeDateRange(3);
         } else if (/last6months/i.test(queryParams.awardDate)) {
-            const [start, end] = makeDateRange(6);
-
-            match.$and.push({
-                awardDate: { $gte: start, $lt: end }
-            });
+            [start, end] = makeDateRange(6);
         } else {
-            const [start, end] = queryParams.awardDate
+            [start, end] = queryParams.awardDate
                 .split('|')
-                .map(str => moment(str).toDate());
+                .map(str => moment(str));
+        }
 
+        if (start && end) {
+            // Ensure the end date is always the last second of the day
+            end = end.set({ hour: 23, minute: 59, second: 59 });
             match.$and.push({
-                awardDate: { $gte: start, $lt: end }
+                awardDate: { $gte: start.toDate(), $lt: end.toDate() }
             });
         }
     }
@@ -298,7 +282,12 @@ async function buildMatchCriteria(queryParams) {
      */
     if (queryParams.localAuthority) {
         match.$and.push({
-            'beneficiaryLocation.geoCode': queryParams.localAuthority
+            beneficiaryLocation: {
+                "$elemMatch" : {
+                    geoCode: queryParams.localAuthority,
+                    geoCodeType: GEOCODE_TYPES.localAuthority
+                }
+            }
         });
     }
 
@@ -307,7 +296,12 @@ async function buildMatchCriteria(queryParams) {
      */
     if (queryParams.westminsterConstituency) {
         match.$and.push({
-            'beneficiaryLocation.geoCode': queryParams.westminsterConstituency
+            beneficiaryLocation: {
+                "$elemMatch" : {
+                    geoCode: queryParams.westminsterConstituency,
+                    geoCodeType: GEOCODE_TYPES.constituency
+                }
+            }
         });
     }
 
@@ -335,8 +329,8 @@ async function buildMatchCriteria(queryParams) {
     /**
      * Search queries
      *
-     * We want search terms to be treated as logical AND querries.
-     * By default mongodb peforms as logical OR search of the terms unless specified as a phrase.
+     * We want search terms to be treated as logical AND queries.
+     * By default mongodb performs as logical OR search of the terms unless specified as a phrase.
      * To get the behaviour we want we need to convert each query word into a "phrase" by wrapping
      * it in quotes. From the docs:
      *
@@ -373,7 +367,6 @@ async function buildMatchCriteria(queryParams) {
      * Lookup geocodes for postcode from postcodes.io
      */
     if (queryParams.postcode) {
-        console.log('fetching data from api.postcodes.io');
         try {
             const postcodeData = await request({
                 json: true,
