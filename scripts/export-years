@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+YEAR_START=$1
+YEAR_END=$2
+COLLECTION_NAME=$3
+OUTPUT_DIR=$4
+
+if [ -z "$1" ]
+  then
+    echo "First argument should be a year to start from"
+    exit 1
+fi
+
+if [ -z "$2" ]
+  then
+    echo "Second argument should be the year to end from"
+    exit 1
+fi
+
+if [ -z "$3" ]
+  then
+    echo "Third argument should be the name of the local collection to back up"
+    exit 1
+fi
+
+if [ -z "$4" ]
+  then
+    echo "Fourth argument should be a path to a backup directory"
+    exit 1
+fi
+
+for ((i=YEAR_START;i<=YEAR_END;i++)); do
+    echo '{ awardDate: { $lt: new Date("'$i'-12-31T23:59:59.000Z"), $gte: new Date("'$i'-01-01T00:00:00.000Z") } }'
+    mongoexport --db blf --collection "$COLLECTION_NAME" --query '{ awardDate: { $lt: new Date("'$i'-12-31T23:59:59.000Z"), $gte: new Date("'$i'-01-01T00:00:00.000Z") } }' --type csv --fields id,title,description,currency,amountAwarded,awardDate,plannedDates,recipientOrganization,fundingOrganization,grantProgramme,dateModified,beneficiaryLocation --out "$OUTPUT_DIR"/"$i".csv
+done
+
+echo "All done!"
