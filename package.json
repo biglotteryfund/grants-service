@@ -44,6 +44,9 @@
     "globalTeardown": "./test/teardown.js",
     "testEnvironment": "./test/mongo-environment.js"
   },
+  "prettier": {
+    "singleQuote": true
+  },
   "dependencies": {
     "dotenv": "6.1.0",
     "express": "4.16.4",
@@ -59,6 +62,7 @@
     "csv-parse": "3.0.0",
     "csv-parser": "1.12.1",
     "eslint": "5.7.0",
+    "eslint-plugin-compat": "2.7.0",
     "eslint-plugin-node": "7.0.1",
     "event-stream": "3.3.4",
     "jest": "23.6.0",

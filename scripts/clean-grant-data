@@ -2,13 +2,9 @@
 'use strict';
 const fs = require('fs');
 const es = require('event-stream');
-const moment = require('moment');
 const { pickBy, identity, get, includes, uniq, flow } = require('lodash');
 const split = require('split');
-
-const wardLocations = require('../data/ward-locations');
-const fundingProgrammes = require('../data/fundingProgrammes');
-const knownProgrammes = Object.keys(fundingProgrammes);
+const moment = require('moment');
 
 const argv = require('yargs')
     .alias('f', 'file')
@@ -18,24 +14,15 @@ const argv = require('yargs')
     .help('h')
     .alias('h', 'help').argv;
 
-const COUNTRIES = {
-    england: {
-        pattern: /^E/,
-        title: 'England'
-    },
-    wales: {
-        pattern: /^W/,
-        title: 'Wales'
-    },
-    scotland: {
-        pattern: /^S/,
-        title: 'Scotland'
-    },
-    'northern-ireland': {
-        pattern: /^N/,
-        title: 'Northern Ireland'
-    }
-};
+const {
+    locationsByCode,
+    GEOCODE_TYPES,
+    getCountryName,
+    wardLocations,
+    knownProgrammes
+} = require('./modules/helpers');
+
+const { programmesToRename, invalidProgrammeCodes, invalidGrantIds } = require('./modules/dataTweaks');
 
 // Turn date fields into actual Date objects
 const parseDates = data => {
@@ -49,7 +36,7 @@ const parseDates = data => {
         if (data[dateField]) {
             // We specify several parsing formats here because the source data uses different formats
             // eg. older data is 2004-04-16 and the rest uses 8/17/15
-            const parsedDate = moment(data[dateField].trim(), ["MM/DD/YYYY", "YYYY-MM-DD"]);
+            const parsedDate = moment(data[dateField].trim(), ['MM/DD/YYYY', 'YYYY-MM-DD']);
             if (parsedDate.isValid()) {
                 data[dateField] = {
                     $date: parsedDate.toDate()
@@ -67,10 +54,52 @@ const parseDates = data => {
 // Split organisation strings into proper structures
 const separateOrgType = data => {
     const orgTypeKey = 'BIGField_Organisation_Type';
+    const orgTypeKeyNew = 'BIGField:Organisation Type';
+
+    // Older records (pre-2019) used a single field for this (`BIGField_Organisation_Type`)
+    // but newer ones split it like so: `BIGField:Organisation Type:Charity`
+    // so we try to normalise them here
+    if (!data[orgTypeKey]) {
+        // Records seem to have multiple types, eg:
+        // 'BIGField:Organisation Type:Charity': 'Registered Charity',
+        // 'BIGField:Organisation Type:Company': 'Company - Limited by Guarantee',
+        // For now we'll take the first one as GrantNav support for these types is limited
+        [
+            'Charity',
+            'Company',
+            'Other Type',
+            'Public Sector',
+            'School'
+        ].some(type => {
+            const typeKey = `${orgTypeKeyNew}:${type}`;
+
+            // The types names here are new and don't match the legacy ones
+            // so we rename them where possible to avoid ending up with
+            // both "Company" and "Company/Mutual Society" fields
+            let legacyTypeName = type;
+            switch (type) {
+                case 'Company':
+                    legacyTypeName = 'Company/Mutual Society';
+                    break;
+                case 'Other Type':
+                    legacyTypeName = 'Other';
+                    break;
+            }
+
+            if (data[typeKey]) {
+                // Reformat into the same structure as the legacy data
+                // eg. `Charity : Registered Charity`
+                data[orgTypeKey] = legacyTypeName + ' : ' + data[typeKey];
+            }
+        });
+    }
+
     if (data[orgTypeKey]) {
-        const parts = data[orgTypeKey].split(' : ');
         data.organisationType = data[orgTypeKey];
         delete data[orgTypeKey];
+
+        const parts = data.organisationType.split(' : ');
+
         if (parts.length > 1) {
             data.organisationType = parts[0];
             data.organisationSubtype = parts[1];
@@ -81,7 +110,7 @@ const separateOrgType = data => {
 
 // Rename the fields to something more useful and drop unused fields
 // http://standard.threesixtygiving.org/en/latest/_static/docson/index.html#../360-giving-schema.json
-const rename = data => {
+const renameFields = data => {
 
     const plannedDates = { startDate: data['Planned Dates:Start Date'] };
 
@@ -117,49 +146,58 @@ const rename = data => {
         dateModified: data['Last modified']
     };
 
-    function getCountryName(geocode) {
-        let countryName, isValid;
-        for (let countryKey in COUNTRIES) {
-            const country = COUNTRIES[countryKey];
-            isValid = country.pattern.test(geocode);
-            if (isValid) {
-                countryName = country.title;
-                break;
-            }
-        }
-        return countryName;
-    }
 
-    // Some records have no location, so only add that field if we find one
-    if (data['Recipient Org:Location:0:Name'] &&
-        data['Recipient Org:Location:0:Name'] !== '' &&
-        data['Recipient Org:Location:0:Name'] !== 'NULL'
-    ) {
-        // Add the first location (always a ward code)
-        newData.beneficiaryLocation = [
-            {
-                name: data['Recipient Org:Location:0:Name'],
-                geoCode: data['Recipient Org:Location:0:Geographic Code'],
-                geoCodeType: 'WD'
-            }
-        ];
+    // Handle locations
+    // Older data (pre-2019) just has names/codes (which seem to be WD followed by CMLAD)
+    // but newer data has additional fields (eg. WPC) which is also labelled
+    // so we try to construct an array of location objects and fill in the blanks
+    let locations = [];
 
-        // There's a slim possibility a record has one location, but not a second
-        // So add the local authority if we have one
-        if (data['Recipient Org:Location:1:Name'] && data['Recipient Org:Location:1:Name'] !== '') {
-            const ladGeoCode = data['Recipient Org:Location:1:Geographic Code'];
-            let localAuthorityData = {
-                name: data['Recipient Org:Location:1:Name'],
-                geoCode: ladGeoCode,
-                geoCodeType: 'CMLAD'
+    // There are up to three location fields in CSVs
+    [0, 1, 2].forEach(num => {
+        const locationName = data[`Recipient Org:Location:${num}:Name`];
+        const locationCode = data[`Recipient Org:Location:${num}:Geographic Code`];
+
+        if (locationName) {
+            let locationData = {
+                name: locationName,
+                geoCode: locationCode
             };
-            // Add the country name (if valid) for later filtering
-            const countryName = getCountryName(ladGeoCode);
-            if (countryName) {
-                localAuthorityData.country = countryName;
+
+            // Add the code type (if we can find it), eg. CMLAD, WD, WPC etc
+            // (newer source data has these codes but uses a wide range of them)
+            const codeType = locationsByCode.find(l => l.code === locationCode);
+            if (codeType) {
+                locationData['geoCodeType'] = codeType.type;
+            } else if (num === 0) {
+                // the first codes are normally wards
+                locationData['geoCodeType'] = GEOCODE_TYPES.ward;
             }
-            newData.beneficiaryLocation.push(localAuthorityData);
+
+            // Add the country name (if valid) for later filtering
+            const countryName = getCountryName(locationCode);
+            if (countryName) {
+                locationData.country = countryName;
+            }
+
+            locations.push(locationData);
         }
+    });
+
+    // Add this to the data (if valid)
+    if (locations.length > 0) {
+        // Is this list of locations missing a constituency? (eg. older records)
+        if (!locations.some(l => l.geoCodeType === GEOCODE_TYPES.constituency)) {
+            const match = wardLocations.find(m => m.wardCode === locations[0].geoCode);
+            if (match) {
+                locations.push({
+                    name: match.constituencyName,
+                    geoCode: match.constituencyCode,
+                    geoCodeType: GEOCODE_TYPES.constituency
+                });
+            }
+        }
+        newData.beneficiaryLocation = locations;
     }
 
     // Strip out null / undefined
@@ -177,39 +215,18 @@ const fixHeroesReturnTypo = data => {
     return data;
 };
 
-// Rename funding programmes from their FMS/internal name
-// to a public-facing one, or fix a typo / case inconsistency
-const programmesToRename = [
-    {
-        from: 'UK Accelerating Ideas',
-        to: 'UK Portfolio'
-    },
-    {
-        from: 'Fulfilling lives: HeadStart',
-        to: 'Fulfilling Lives: HeadStart'
-    }
-];
-const renameProgrammes = data => {
-    const shouldRename = programmesToRename.find(p => p.from === data.grantProgramme.title);
-    if (shouldRename) {
-        data.grantProgramme.titleInternal = data.grantProgramme.title;
-        data.grantProgramme.title = shouldRename.to;
-    }
-    return data;
-};
-
 // Replace some wrongly-encoded characters (mostly quotes) with the correct symbols
 const fixEncodingIssues = data => {
     // eg [pattern, replacement]
     const encodingFixes = [
-        [/â€™/g, "'"],
-        [/â€˜/g, "'"],
-        [/â€™/g, "'"],
-        [/â€“/g, "–"],
-        [/â€¦/g, "…"],
+        [/â€™/g, '\''],
+        [/â€˜/g, '\''],
+        [/â€™/g, '\''],
+        [/â€“/g, '–'],
+        [/â€¦/g, '…'],
         [/â€œ/g, '"'],
         [/Â£/g, '£'],
-        [/â€/g, '"'], // must come last, otherwise too general
+        [/â€/g, '"'] // must come last, otherwise too general
     ];
     encodingFixes.forEach(pair => {
         let [wrong, right] = pair;
@@ -230,31 +247,14 @@ const fixEncodingIssues = data => {
     return data;
 };
 
-const addLocations = data => {
-    // Find the first location (eg. ward)
-    const wardCode = (data.beneficiaryLocation && data.beneficiaryLocation[0].geoCode) || false;
-    const match = wardLocations.find(m => m.wardCode === wardCode);
-
-    if (match) {
-        // Add the constituency location
-        data.beneficiaryLocation.push({
-            name: match.constituencyName,
-            geoCode: match.constituencyCode,
-            geoCodeType: 'WPC'
-        });
-
-        // If we have lat/lngs for this ward, add them too
-        if (match.location) {
-            data.beneficiaryLocation[0].location = {
-                type: "Point",
-                coordinates: [
-                    parseFloat(match.location.long),
-                    parseFloat(match.location.lat)
-                ]
-            }
-        }
+// Rename funding programmes from their FMS/internal name
+// to a public-facing one, or fix a typo / case inconsistency
+const renameProgrammes = data => {
+    const shouldRename = programmesToRename.find(p => p.from === data.grantProgramme.title);
+    if (shouldRename) {
+        data.grantProgramme.titleInternal = data.grantProgramme.title;
+        data.grantProgramme.title = shouldRename.to;
     }
-
     return data;
 };
 
@@ -268,33 +268,31 @@ const checkForNewProgrammes = data => {
 };
 
 
-const outputFileStream = fs.createWriteStream(argv.o, { flags:'a' });
+const outputFileStream = fs.createWriteStream(argv.o, { flags: 'a' });
 
-const getStream = function () {
-    const stream = fs.createReadStream(argv.f, {encoding: 'utf8'});
+const getStream = function() {
+    const stream = fs.createReadStream(argv.f, { encoding: 'utf8' });
     return stream.pipe(split(JSON.parse, null, { trailing: false }));
 };
 
 console.log('Beginning cleaning of grant data...');
 
 getStream().pipe(es.mapSync((data) => {
+
     let cleaned = flow(
         parseDates,
         separateOrgType,
-        rename,
+        renameFields,
         fixHeroesReturnTypo,
         fixEncodingIssues,
-        addLocations,
         renameProgrammes,
         checkForNewProgrammes
     )(data);
 
     // Remove data from internal-only programmes (eg. transfer of funds)
-    const invalidProgrammeCodes = ['PFP1'];
     const isFromInvalidProgramme = includes(invalidProgrammeCodes, get(cleaned, 'grantProgramme.code'));
 
     // Remove grants which were not successful (eg. match funding)
-    const invalidGrantIds = ['360G-blf-0031057998', '360G-blf-0031059356'];
     const isInvalidGrant = includes(invalidGrantIds, get(cleaned, 'id'));
 
     // Append this cleaned data to a file if it's valid, else skip it
@@ -304,7 +302,7 @@ getStream().pipe(es.mapSync((data) => {
         outputFileStream.write(JSON.stringify(cleaned) + '\n');
     }
 
-}).on('error', function (err) {
+}).on('error', function(err) {
     console.log('Error parsing JSON', err);
 }).on('end', () => {
     console.log('Finished cleaning JSON - file written successfully.');
@@ -315,8 +313,8 @@ getStream().pipe(es.mapSync((data) => {
         uniq(unknownProgrammes).forEach(programme => {
             let data = {};
             data[programme] = {
-                "_id": programme,
-                "urlPath": "/relative/url/goes/here"
+                '_id': programme,
+                'urlPath': '/relative/url/goes/here'
             };
             console.log(JSON.stringify(data, null, 4));
         });
