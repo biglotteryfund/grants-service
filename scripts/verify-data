@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+DATABASE_NAME=$1
+COLLECTION_NAME=$2
+
+if [ -z "$1" ]
+  then
+    echo "First argument should be the database to use"
+    exit 1
+fi
+
+if [ -z "$2" ]
+  then
+    echo "Second argument should be a collection name to import into"
+    exit 1
+fi
+
+
+echo "Looking up current live facet data..."
+curl --silent https://lambda.blf.digital/past-grants-search/build-facets > facets-old.json
+echo "Done."
+echo "Computing new facet data based on this import..."
+export MONGO_DB=$DATABASE_NAME && export MONGO_COLLECTION=$COLLECTION_NAME && sls offline start --exec="curl --silent http://localhost:8888/past-grants-search/build-facets > facets-new.json"
+echo "Done."
+echo "Running tests to ensure major facets have not changed"
+jest ./test/compare-facets.test.js;
+rm facets-old.json facets-new.json
+echo "Tests complete. If any tests failed, ensure your changes did not introduce any unexpected new data."
