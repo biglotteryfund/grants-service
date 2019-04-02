@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "sls offline start --dontPrintOutput",
-    "test": "eslint . && jest --detectOpenHandles",
+    "test": "eslint . && jest --detectOpenHandles --testPathIgnorePatterns compare-facets.test.js",
     "format": "prettier --single-quote --write *.js *.yml {grants,lib}/**/*.js README.md",
     "deployTest": "sls deploy --stage=test --region=eu-west-2",
     "deployProd": "sls deploy --stage=prod --region=eu-west-2"
