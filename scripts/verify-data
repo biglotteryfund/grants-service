@@ -17,7 +17,7 @@ fi
 
 
 echo "Looking up current live facet data..."
-curl --silent https://lambda.blf.digital/past-grants-search/build-facets > facets-old.json
+curl --silent --max-time 120 https://lambda.blf.digital/past-grants-search/build-facets > facets-old.json
 echo "Done."
 echo "Computing new facet data based on this import..."
 export MONGO_DB=$DATABASE_NAME && export MONGO_COLLECTION=$COLLECTION_NAME && sls offline start --exec="curl --silent http://localhost:8888/past-grants-search/build-facets > facets-new.json"
