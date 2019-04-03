@@ -25,6 +25,7 @@ fi
 
 # 1. Parse CSV => JSON
 echo "Parsing CSV grant data into JSON...";
+echo "Using file $INPUT_CSV"
 $(npm bin)/csv-parser "$INPUT_CSV" -o tmp-parsed.json;
 echo "Done.";
 
@@ -32,6 +33,7 @@ echo "Done.";
 ./scripts/clean-grant-data -f tmp-parsed.json -o tmp-clean.json;
 
 # 3. Import cleaned JSON into Mongo
+echo "Finished cleaning $INPUT_CSV data"
 echo "Importing grant data into '$COLLECTION_NAME' collection in database '$DATABASE_NAME'";
 ./scripts/import-grants tmp-clean.json "$DATABASE_NAME" "$COLLECTION_NAME";
 

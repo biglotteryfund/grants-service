@@ -2,7 +2,7 @@
 'use strict';
 const fs = require('fs');
 const es = require('event-stream');
-const { pickBy, identity, get, includes, uniq, flow } = require('lodash');
+const { pickBy, identity, get, includes, uniqBy, flow } = require('lodash');
 const split = require('split');
 const moment = require('moment');
 
@@ -34,9 +34,7 @@ const parseDates = data => {
     ];
     dateFields.forEach(dateField => {
         if (data[dateField]) {
-            // We specify several parsing formats here because the source data uses different formats
-            // eg. older data is 2004-04-16 and the rest uses 8/17/15
-            const parsedDate = moment(data[dateField].trim(), ['MM/DD/YYYY', 'YYYY-MM-DD']);
+            let parsedDate = moment(data[dateField].trim().replace('±', '+'));
             if (parsedDate.isValid()) {
                 data[dateField] = {
                     $date: parsedDate.toDate()
@@ -262,7 +260,10 @@ const renameProgrammes = data => {
 const unknownProgrammes = [];
 const checkForNewProgrammes = data => {
     if (data.grantProgramme && knownProgrammes.indexOf(data.grantProgramme.code) === -1) {
-        unknownProgrammes.push(data.grantProgramme.code);
+        unknownProgrammes.push({
+            code: data.grantProgramme.code,
+            title: data.grantProgramme.title
+        });
     }
     return data;
 };
@@ -273,6 +274,17 @@ const outputFileStream = fs.createWriteStream(argv.o, { flags: 'a' });
 const getStream = function() {
     const stream = fs.createReadStream(argv.f, { encoding: 'utf8' });
     return stream.pipe(split(JSON.parse, null, { trailing: false }));
+};
+
+const checkValidGrant = data => {
+    if (!data.id) {
+        console.log('Grant is missing ID field', data);
+        return true;
+    } else if (!data.awardDate) {
+        console.log('Grant is missing awardDate', data);
+        return true;
+    }
+    return false;
 };
 
 console.log('Beginning cleaning of grant data...');
@@ -295,9 +307,12 @@ getStream().pipe(es.mapSync((data) => {
     // Remove grants which were not successful (eg. match funding)
     const isInvalidGrant = includes(invalidGrantIds, get(cleaned, 'id'));
 
+    // Some CSVs have a bunch of whitespace at the end so this drops them
+    const dataIsInvalid = checkValidGrant(cleaned);
+
     // Append this cleaned data to a file if it's valid, else skip it
-    if (isFromInvalidProgramme || isInvalidGrant) {
-        console.log('Skipped output', cleaned, { isFromInvalidProgramme, isInvalidGrant });
+    if (isFromInvalidProgramme || isInvalidGrant || dataIsInvalid) {
+        console.log('Skipped output', { isFromInvalidProgramme, isInvalidGrant, dataIsInvalid });
     } else {
         outputFileStream.write(JSON.stringify(cleaned) + '\n');
     }
@@ -310,14 +325,15 @@ getStream().pipe(es.mapSync((data) => {
         console.log('=================');
         console.log('Some unknown programmes were included in this import.');
         console.log('You should add the following items to /data/fundingProgrammes.js');
-        uniq(unknownProgrammes).forEach(programme => {
-            let data = {};
-            data[programme] = {
-                '_id': programme,
+        let data = {};
+        uniqBy(unknownProgrammes, 'code').forEach(programme => {
+            data[programme.code] = {
+                '_id': programme.code,
+                'title': programme.title,
                 'urlPath': '/relative/url/goes/here'
             };
-            console.log(JSON.stringify(data, null, 4));
         });
+        console.log(JSON.stringify(data, null, 4));
     }
     outputFileStream.end();
 }));

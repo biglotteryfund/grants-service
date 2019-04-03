@@ -1146,5 +1146,52 @@ module.exports = {
         "_id": "iwill fund",
         "code": "IWF2",
         "urlPath": "iwill-fund"
+    },
+    "PLO1": {
+        "_id": "Partnerships",
+        "code": "PLO1",
+        "urlPath": "partnerships-england"
+    },
+    "BLF_MIM_SC": {
+        "_id": "Medium Grants Scotland",
+        "code": "BLF_MIM_SC"
+    },
+    "BLF_MCL_SC": {
+        "_id": "Medium Grants Scotland",
+        "code": "BLF_MCL_SC",
+    },
+    "BLF_LIL_SC": {
+        "_id": "Large Grants Scotland",
+        "code": "BLF_LIL_SC",
+    },
+    "PEW1": {
+        "_id": "Partnerships",
+        "code": "PEW1",
+        "urlPath": "partnerships-england"
+    },
+    "PBR1": {
+        "_id": "Partnerships",
+        "code": "PBR1",
+        "urlPath": "partnerships-england"
+    },
+    "BCF1": {
+        "_id": "Building Connections Fund",
+        "code": "BCF1",
+        "urlPath": "building-connections-fund"
+    },
+    "PMA1": {
+        "_id": "Partnerships",
+        "code": "PMA1",
+        "urlPath": "partnerships-england"
+    },
+    "PLE1": {
+        "_id": "Partnerships",
+        "code": "PLE1",
+        "urlPath": "partnerships-england"
+    },
+    "RCEW1": {
+        "_id": "Reaching Communities",
+        "code": "RCEW1",
+        "urlPath": "reaching-communities-england"
     }
 };
