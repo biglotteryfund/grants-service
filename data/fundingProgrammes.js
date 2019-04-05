@@ -1193,5 +1193,14 @@ module.exports = {
         "_id": "Reaching Communities",
         "code": "RCEW1",
         "urlPath": "reaching-communities-england"
+    },
+    "JDS1": {
+        "_id": "Joint Schemes",
+        "code": "JDS1",
+    },
+    "BLF_HWF_WA": {
+        "_id": "People and Places",
+        "code": "BLF_HWF_WA",
+        "urlPath": "people-and-places-medium-grants"
     }
 };

@@ -34,7 +34,17 @@ const parseDates = data => {
     ];
     dateFields.forEach(dateField => {
         if (data[dateField]) {
-            let parsedDate = moment(data[dateField].trim().replace('±', '+'));
+            let parsedDate;
+            const dateStr = data[dateField].trim();
+
+            if (dateStr.indexOf('/') === -1) {
+                // Is this an ISO string? (eg. used for AwardDate fields)
+                parsedDate = moment(dateStr.replace('±', '+'));
+            } else {
+                // Fall back to standard CSV format
+                parsedDate = moment(dateStr, 'DD/MM/YYYY');
+            }
+
             if (parsedDate.isValid()) {
                 data[dateField] = {
                     $date: parsedDate.toDate()
