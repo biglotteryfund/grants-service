@@ -297,6 +297,10 @@ const checkValidGrant = data => {
     return false;
 };
 
+const checkForMissingPressSummary = data => {
+    return data.description.trim().toLowerCase().indexOf('no press summary is available in this release') !== -1;
+};
+
 console.log('Beginning cleaning of grant data...');
 
 getStream().pipe(es.mapSync((data) => {
@@ -320,9 +324,11 @@ getStream().pipe(es.mapSync((data) => {
     // Some CSVs have a bunch of whitespace at the end so this drops them
     const dataIsInvalid = checkValidGrant(cleaned);
 
+    const isEmbargoed = checkForMissingPressSummary(cleaned);
+
     // Append this cleaned data to a file if it's valid, else skip it
-    if (isFromInvalidProgramme || isInvalidGrant || dataIsInvalid) {
-        console.log('Skipped output', { isFromInvalidProgramme, isInvalidGrant, dataIsInvalid });
+    if (isFromInvalidProgramme || isInvalidGrant || dataIsInvalid || isEmbargoed) {
+        console.log('Skipped output', { isFromInvalidProgramme, isInvalidGrant, dataIsInvalid, isEmbargoed });
     } else {
         outputFileStream.write(JSON.stringify(cleaned) + '\n');
     }
