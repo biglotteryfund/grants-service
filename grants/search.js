@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 'use strict';
 const moment = require('moment');
 const querystring = require('querystring');
@@ -190,7 +191,6 @@ async function getSearchSuggestions(locale, totalGrantsForQuery, queryParams) {
     let result = [];
     if (totalGrantsForQuery === 0 && queryParams.q) {
         try {
-            console.log(`Check spelling`);
             result = await checkSpelling({
                 searchTerm: queryParams.q,
                 locale: locale
