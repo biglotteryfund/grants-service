@@ -22,11 +22,15 @@ describe('Past Grants Search', () => {
         // create mock data
         grantsCollection = db.collection('grants');
         facetsCollection = db.collection('facets');
-        await grantsCollection.insertMany(mockGrantData.results, { ordered: true });
+        await grantsCollection.insertMany(mockGrantData.results, {
+            ordered: true
+        });
 
-        await Promise.all(indices.map(i => {
-            return grantsCollection.createIndex(i.spec, i.options);
-        }));
+        await Promise.all(
+            indices.map(i => {
+                return grantsCollection.createIndex(i.spec, i.options);
+            })
+        );
     });
 
     afterAll(async () => {
@@ -40,7 +44,10 @@ describe('Past Grants Search', () => {
 
     it('should return first page of grants', async () => {
         const testLimit = 5;
-        const grants = await queryGrants({ limit: testLimit, sort: 'amountAwarded|asc' });
+        const grants = await queryGrants({
+            limit: testLimit,
+            sort: 'amountAwarded|asc'
+        });
         const firstResult = grants.results[0];
         expect(firstResult.title).toBe('75th anniversary outing');
         expect(grants.results.length).toBe(testLimit);
@@ -48,9 +55,15 @@ describe('Past Grants Search', () => {
 
     it('should return second page of grants', async () => {
         const testLimit = 5;
-        const grants = await queryGrants({ limit: testLimit, page: 2, sort: 'amountAwarded|asc' });
+        const grants = await queryGrants({
+            limit: testLimit,
+            page: 2,
+            sort: 'amountAwarded|asc'
+        });
         const firstResult = grants.results[0];
-        expect(firstResult.title).toBe('Music education work in special schools');
+        expect(firstResult.title).toBe(
+            'Music education work in special schools'
+        );
         expect(grants.results.length).toBe(testLimit);
     });
 
