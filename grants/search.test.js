@@ -13,10 +13,9 @@ describe('Past Grants Search', () => {
     let facetsCollection;
 
     beforeAll(async () => {
-        connection = await MongoClient.connect(
-            global.__MONGO_URI__,
-            { useNewUrlParser: true }
-        );
+        connection = await MongoClient.connect(global.__MONGO_URI__, {
+            useNewUrlParser: true
+        });
         db = await connection.db(global.__MONGO_DB_NAME__);
 
         // create mock data
