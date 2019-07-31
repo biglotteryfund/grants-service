@@ -188,7 +188,7 @@ function makeDateRange(monthsAgo) {
 }
 
 async function getSearchSuggestions(locale, totalGrantsForQuery, queryParams) {
-    let result = [];
+    let result = null;
     if (totalGrantsForQuery === 0 && queryParams.q) {
         try {
             result = await checkSpelling({
@@ -386,7 +386,9 @@ async function buildMatchCriteria(queryParams) {
             const postcodeData = await request({
                 json: true,
                 method: 'GET',
-                url: `https://api.postcodes.io/postcodes?q=${queryParams.postcode}`,
+                url: `https://api.postcodes.io/postcodes?q=${
+                    queryParams.postcode
+                }`,
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -933,7 +935,7 @@ async function fetchGrantByRecipient(
      */
     const resultsPipeline = [
         { $match: matchCriteria },
-        { $sort: { 'awardDate': -1, 'recipientOrganization.id': 1 } },
+        { $sort: { awardDate: -1, 'recipientOrganization.id': 1 } },
         {
             $addFields: {
                 id: {
