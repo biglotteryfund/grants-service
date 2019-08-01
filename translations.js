@@ -3,7 +3,7 @@ const { get } = require('lodash');
 
 const translations = {
     misc: {
-        Under: {
+        'Under': {
             en: 'Under',
             cy: 'O dan'
         },
@@ -39,11 +39,11 @@ const translations = {
         }
     },
     countries: {
-        England: {
+        'England': {
             en: 'England',
             cy: 'Lloegr'
         },
-        Scotland: {
+        'Scotland': {
             en: 'Scotland',
             cy: 'Yr Alban'
         },
@@ -51,7 +51,7 @@ const translations = {
             en: 'Northern Ireland',
             cy: 'Gogledd Iwerddon'
         },
-        Wales: {
+        'Wales': {
             en: 'Wales',
             cy: 'Cymru'
         }
@@ -59,7 +59,7 @@ const translations = {
     localAuthorities: {},
     westminsterConstituencies: {},
     orgTypes: {
-        Charity: {
+        'Charity': {
             en: 'Charity',
             cy: 'Elusen'
         },
@@ -147,7 +147,7 @@ const translations = {
             en: 'Limited Liability Partnership',
             cy: 'Partneriaeth Atebolrwydd Cyfyngedig'
         },
-        Other: {
+        'Other': {
             en: 'Other',
             cy: 'Arall'
         },
@@ -167,7 +167,7 @@ const translations = {
             en: 'Independent School',
             cy: 'Ysgol Annibynnol'
         },
-        Individual: {
+        'Individual': {
             en: 'Individual',
             cy: 'Unigolyn'
         },
@@ -179,7 +179,7 @@ const translations = {
             en: 'Parochial Church Council',
             cy: 'Cyngor Eglwys Blwyfol'
         },
-        Partnership: {
+        'Partnership': {
             en: 'Partnership',
             cy: 'Partneriaeth'
         },
@@ -187,7 +187,7 @@ const translations = {
             en: 'Sole Trader',
             cy: 'Unig Fasnachwr'
         },
-        University: {
+        'University': {
             en: 'University',
             cy: 'Prifysgol'
         },
@@ -243,7 +243,7 @@ const translations = {
             en: 'Town Council',
             cy: 'Cyngor Tref'
         },
-        School: {
+        'School': {
             en: 'School',
             cy: 'Ysgol'
         },
@@ -251,7 +251,7 @@ const translations = {
             en: 'School: All',
             cy: 'Ysgol: Pob un'
         },
-        Academy: {
+        'Academy': {
             en: 'Academy',
             cy: 'Academi'
         },

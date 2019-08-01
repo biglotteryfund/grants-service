@@ -1,23 +1,23 @@
+/* eslint-disable no-console */
 'use strict';
-const {
-    compact,
-    difference,
-    flow,
-    get,
-    groupBy,
-    has,
-    head,
-    sortBy
-} = require('lodash');
-const { get: getFp } = require('lodash/fp');
-const request = require('request-promise-native');
-const querystring = require('querystring');
 const moment = require('moment');
+const querystring = require('querystring');
+const request = require('request-promise-native');
+const compact = require('lodash/compact');
+const difference = require('lodash/difference');
+const flow = require('lodash/flow');
+const get = require('lodash/get');
+const getFp = require('lodash/fp/get');
+const groupBy = require('lodash/groupBy');
+const has = require('lodash/has');
+const head = require('lodash/head');
+const sortBy = require('lodash/sortBy');
 
-const { matchPostcode, numberWithCommas } = require('../lib/strings');
-const { GEOCODE_TYPES } = require('../lib/geocodes');
+const checkSpelling = require('../lib/check-spelling');
 const fundingProgrammes = require('../data/fundingProgrammes');
+const { GEOCODE_TYPES } = require('../lib/geocodes');
 const { getTranslation, translateLabels } = require('../translations');
+const { matchPostcode, numberWithCommas } = require('../lib/strings');
 
 /**
  * 360Giving organisation prefix
@@ -183,10 +183,24 @@ function addGrantDetail(grant, locale) {
 function makeDateRange(monthsAgo) {
     // Without .clone(), moment mutates the original $now
     const end = now.clone();
-    const start = now
-        .clone()
-        .subtract(monthsAgo, 'months');
+    const start = now.clone().subtract(monthsAgo, 'months');
     return [start, end];
+}
+
+async function getSearchSuggestions(locale, totalGrantsForQuery, queryParams) {
+    let result = null;
+    if (totalGrantsForQuery === 0 && queryParams.q) {
+        try {
+            result = await checkSpelling({
+                searchTerm: queryParams.q,
+                locale: locale
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    return result;
 }
 
 /**
@@ -284,7 +298,7 @@ async function buildMatchCriteria(queryParams) {
     if (queryParams.localAuthority) {
         match.$and.push({
             beneficiaryLocation: {
-                "$elemMatch" : {
+                $elemMatch: {
                     geoCode: queryParams.localAuthority,
                     geoCodeType: GEOCODE_TYPES.localAuthority
                 }
@@ -298,7 +312,7 @@ async function buildMatchCriteria(queryParams) {
     if (queryParams.westminsterConstituency) {
         match.$and.push({
             beneficiaryLocation: {
-                "$elemMatch" : {
+                $elemMatch: {
                     geoCode: queryParams.westminsterConstituency,
                     geoCodeType: GEOCODE_TYPES.constituency
                 }
@@ -807,14 +821,22 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
     const totalGrants = await mongo.grantsCollection.find({}).count();
 
     const getDate = getFp('[0].awardDate');
-    const firstGrant = await mongo.grantsCollection.find({}).sort({
-        awardDate: -1 
-    }).limit(1).toArray();
+    const firstGrant = await mongo.grantsCollection
+        .find({})
+        .sort({
+            awardDate: -1
+        })
+        .limit(1)
+        .toArray();
 
-    const lastGrant = await mongo.grantsCollection.find({}).sort({
-        awardDate: 1
-    }).limit(1).toArray();
-    
+    const lastGrant = await mongo.grantsCollection
+        .find({})
+        .sort({
+            awardDate: 1
+        })
+        .limit(1)
+        .toArray();
+
     const grantDates = {
         end: getDate(firstGrant),
         start: getDate(lastGrant)
@@ -871,6 +893,11 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
             totalAwarded: totalAwarded,
             grantDates: grantDates,
             query: queryParams,
+            searchSuggestions: await getSearchSuggestions(
+                locale,
+                totalGrantsForQuery,
+                queryParams
+            ),
             sort: buildSortMeta(sort, queryParams),
             pagination: buildPagination(
                 currentPage,
