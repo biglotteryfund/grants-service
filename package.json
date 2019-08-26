@@ -65,7 +65,7 @@
     "serverless-http": "^1.6.0"
   },
   "devDependencies": {
-    "csv-parse": "3.0.0",
+    "csv-parse": "4.4.5",
     "csv-parser": "1.12.1",
     "event-stream": "3.3.4",
     "jest": "^24.8.0",
