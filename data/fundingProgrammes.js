@@ -1202,5 +1202,20 @@ module.exports = {
         "_id": "People and Places",
         "code": "BLF_HWF_WA",
         "urlPath": "people-and-places-medium-grants"
+    },
+    "DF2": {
+        "_id": "Digital Fund Strand 2",
+        "code": "DF2",
+        "urlPath": "digital-fund"
+    },
+    "DF1": {
+        "_id": "Digital Fund Strand 1",
+        "code": "DF1",
+        "urlPath": "digital-fund"
+    },
+    "LEL1": {
+        "_id": "Lived Experience Leadership Pilot",
+        "code": "LEL1",
+        "urlPath": "leaders-with-lived-experience"
     }
 };
