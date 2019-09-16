@@ -2,7 +2,7 @@
 'use strict';
 const fs = require('fs');
 const es = require('event-stream');
-const { pickBy, identity, get, includes, uniqBy, flow } = require('lodash');
+const { pickBy, identity, get, includes, uniqBy, flow, set } = require('lodash');
 const split = require('split');
 const moment = require('moment');
 
@@ -11,6 +11,8 @@ const argv = require('yargs')
     .describe('f', 'The path to a JSON file to clean')
     .alias('o', 'output')
     .describe('b', 'The path to the JSON file to output')
+    .alias('filename', 'filename')
+    .describe('filename', 'The name of the original CSV file')
     .help('h')
     .alias('h', 'help').argv;
 
@@ -23,6 +25,8 @@ const {
 } = require('./modules/helpers');
 
 const { programmesToRename, invalidProgrammeCodes, invalidGrantIds } = require('./modules/dataTweaks');
+
+let logSkippedOutput = [];
 
 // Turn date fields into actual Date objects
 const parseDates = data => {
@@ -328,7 +332,7 @@ getStream().pipe(es.mapSync((data) => {
 
     // Append this cleaned data to a file if it's valid, else skip it
     if (isFromInvalidProgramme || isInvalidGrant || dataIsInvalid || isEmbargoed) {
-        console.log('Skipped output', { isFromInvalidProgramme, isInvalidGrant, dataIsInvalid, isEmbargoed });
+        logSkippedOutput.push({ isFromInvalidProgramme, isInvalidGrant, dataIsInvalid, isEmbargoed });
     } else {
         outputFileStream.write(JSON.stringify(cleaned) + '\n');
     }
@@ -336,20 +340,37 @@ getStream().pipe(es.mapSync((data) => {
 }).on('error', function(err) {
     console.log('Error parsing JSON', err);
 }).on('end', () => {
+    console.log('=================');
     console.log('Finished cleaning JSON - file written successfully.');
+    console.log(argv.filename);
+
     if (unknownProgrammes.length > 0) {
-        console.log('=================');
         console.log('Some unknown programmes were included in this import.');
         console.log('You should add the following items to /data/fundingProgrammes.js');
         let data = {};
         uniqBy(unknownProgrammes, 'code').forEach(programme => {
             data[programme.code] = {
-                '_id': programme.code,
-                'title': programme.title,
+                '_id': programme.title,
+                'code': programme.code,
                 'urlPath': '/relative/url/goes/here'
             };
         });
         console.log(JSON.stringify(data, null, 4));
     }
+
+    if (logSkippedOutput.length > 0) {
+        console.log('Some items were skipped from importing:');
+        let skippedTotals = {};
+        logSkippedOutput.forEach(r => {
+            for (let [key, value] of Object.entries(r)) {
+                if (value === true) {
+                    set(skippedTotals, key, get(skippedTotals, key, 0) + 1);
+                }
+            }
+        });
+        console.log(JSON.stringify(skippedTotals, null, 4));
+    }
+
+    console.log('=================');
     outputFileStream.end();
 }));
