@@ -30,7 +30,7 @@ $(npm bin)/csv-parser "$INPUT_CSV" -o tmp-parsed.json;
 echo "Done.";
 
 # 2. Clean data into GrantNav format
-./scripts/clean-grant-data -f tmp-parsed.json -o tmp-clean.json;
+./scripts/clean-grant-data -f tmp-parsed.json -o tmp-clean.json --filename $INPUT_CSV;
 
 # 3. Import cleaned JSON into Mongo
 echo "Finished cleaning $INPUT_CSV data"
