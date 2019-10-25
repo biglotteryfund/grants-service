@@ -67,7 +67,7 @@
   "devDependencies": {
     "csv-parse": "3.0.0",
     "csv-parser": "1.12.1",
-    "event-stream": "3.3.4",
+    "event-stream": "4.0.1",
     "jest": "^24.8.0",
     "jest-environment-node": "^24.8.0",
     "mongodb-memory-server": "2.4.3",
