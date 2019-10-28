@@ -66,7 +66,7 @@
     "csv-parse": "3.0.0",
     "csv-parser": "1.12.1",
     "event-stream": "3.3.4",
-    "eslint": "6.5.1",
+    "eslint": "6.6.0",
     "eslint-plugin-node": "10.0.0",
     "jest": "24.9.0",
     "jest-environment-node": "24.9.0",
