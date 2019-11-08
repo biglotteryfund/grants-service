@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "csv-parse": "3.0.0",
-    "csv-parser": "1.12.1",
+    "csv-parser": "2.3.2",
     "event-stream": "3.3.4",
     "eslint": "6.6.0",
     "eslint-plugin-node": "10.0.0",
