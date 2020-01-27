@@ -55,7 +55,7 @@
     "express": "4.16.4",
     "lodash": "4.17.15",
     "moment": "^2.24.0",
-    "mongodb": "3.1.8",
+    "mongodb": "3.5.2",
     "nspell": "2.1.2",
     "request": "2.88.0",
     "request-promise-native": "^1.0.5",
