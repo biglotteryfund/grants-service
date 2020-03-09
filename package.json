@@ -76,6 +76,6 @@
     "serverless-domain-manager": "2.6.5",
     "serverless-offline": "3.27.0",
     "split": "1.0.1",
-    "yargs": "^13.3.0"
+    "yargs": "^15.3.0"
   }
 }
