@@ -1217,5 +1217,19 @@ module.exports = {
         "_id": "Lived Experience Leadership Pilot",
         "code": "LEL1",
         "urlPath": "leaders-with-lived-experience"
+    },
+    "25A1": {
+        "_id": "25th Anniversary",
+        "code": "25A1"
+    },
+    "GRI1": {
+        "_id": "NI Great Ideas",
+        "code": "GRI1",
+        "urlPath": "great-ideas"
+    },
+    "STF1": {
+        "_id": "Safeguarding Training Fund",
+        "code": "STF1",
+        "urlPath": "safeguarding-training-fund-phase-1"
     }
 };
