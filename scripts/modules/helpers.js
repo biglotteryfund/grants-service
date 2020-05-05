@@ -11,13 +11,16 @@ let locationsByCode = [];
 wardLocations.forEach(l => {
     locationsByCode.push({
         code: l.wardCode,
-        type: GEOCODE_TYPES.ward
+        type: GEOCODE_TYPES.ward,
+        name: l.wardName,
     }, {
         code: l.constituencyCode,
-        type: GEOCODE_TYPES.constituency
+        type: GEOCODE_TYPES.constituency,
+        name: l.constituencyName
     }, {
         code: l.localAuthorityCode,
-        type: GEOCODE_TYPES.localAuthority
+        type: GEOCODE_TYPES.localAuthority,
+        name: l.localAuthorityName,
     });
 });
 

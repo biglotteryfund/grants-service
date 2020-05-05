@@ -184,7 +184,6 @@ const renameFields = data => {
 
         if (locationName) {
             let locationData = {
-                name: locationName,
                 geoCode: locationCode
             };
 
@@ -193,9 +192,11 @@ const renameFields = data => {
             const codeType = locationsByCode.find(l => l.code === locationCode);
             if (codeType) {
                 locationData['geoCodeType'] = codeType.type;
+                locationData['name'] = codeType.name;
             } else if (num === 0) {
                 // the first codes are normally wards
                 locationData['geoCodeType'] = GEOCODE_TYPES.ward;
+                locationData['name'] = locationName;
             }
 
             // Add the country name (if valid) for later filtering
