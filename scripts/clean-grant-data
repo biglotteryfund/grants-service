@@ -120,6 +120,17 @@ const separateOrgType = data => {
     return data;
 };
 
+/**
+ * Remove 360Giving organisation prefixes
+ * (we have two due to name change)
+ * We don't want to expose these IDs in public urls
+ * so we remove them at import time
+ */
+function trimIdPrefix(id) {
+    const ID_PREFIX = /360G-(blf|tnlcomfund)-/;
+    return id.replace(ID_PREFIX, '');
+}
+
 // Rename the fields to something more useful and drop unused fields
 // http://standard.threesixtygiving.org/en/latest/_static/docson/index.html#../360-giving-schema.json
 const renameFields = data => {
@@ -131,7 +142,8 @@ const renameFields = data => {
     }
 
     const newData = {
-        id: data['Identifier'],
+        id: trimIdPrefix(data['Identifier']),
+        originalId: data['Identifier'],
         title: data['Title'],
         description: data['Description'],
         currency: data['Currency'],
@@ -172,7 +184,6 @@ const renameFields = data => {
 
         if (locationName) {
             let locationData = {
-                name: locationName,
                 geoCode: locationCode
             };
 
@@ -181,9 +192,11 @@ const renameFields = data => {
             const codeType = locationsByCode.find(l => l.code === locationCode);
             if (codeType) {
                 locationData['geoCodeType'] = codeType.type;
+                locationData['name'] = codeType.name;
             } else if (num === 0) {
                 // the first codes are normally wards
                 locationData['geoCodeType'] = GEOCODE_TYPES.ward;
+                locationData['name'] = locationName;
             }
 
             // Add the country name (if valid) for later filtering

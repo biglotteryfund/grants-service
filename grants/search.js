@@ -19,13 +19,6 @@ const { GEOCODE_TYPES } = require('../lib/geocodes');
 const { getTranslation, translateLabels } = require('../translations');
 const { matchPostcode, numberWithCommas } = require('../lib/strings');
 
-/**
- * 360Giving organisation prefix
- * We don't want to expose this in public urls
- * so we prepend this when doing lookups
- */
-const ID_PREFIX = '360G-blf-';
-
 const now = moment();
 const URL_DATE_FORMAT = 'YYYY-MM-DD';
 
@@ -791,15 +784,7 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
             ? { $project: { _id: 0 } }
             : null,
 
-        { $sort: sort.criteria },
-
-        {
-            $addFields: {
-                id: {
-                    $arrayElemAt: [{ $split: ['$id', ID_PREFIX] }, 1]
-                }
-            }
-        }
+        { $sort: sort.criteria }
     ]);
 
     /**
@@ -933,14 +918,7 @@ async function fetchGrantByRecipient(
      */
     const resultsPipeline = [
         { $match: matchCriteria },
-        { $sort: { 'awardDate': -1, 'recipientOrganization.id': 1 } },
-        {
-            $addFields: {
-                id: {
-                    $arrayElemAt: [{ $split: ['$id', ID_PREFIX] }, 1]
-                }
-            }
-        }
+        { $sort: { 'awardDate': -1, 'recipientOrganization.id': 1 } }
     ];
 
     let grantsResult = await grantsCollection
@@ -1008,8 +986,7 @@ async function fetchGrantByRecipient(
  * so we prepend this when doing lookups
  */
 async function fetchGrantById(collection, id, locale = 'en') {
-    const fullID = `${ID_PREFIX}${id}`;
-    let result = await collection.findOne({ id: fullID });
+    let result = await collection.findOne({ id: id });
     result = result && addGrantDetail(result, locale);
     return result;
 }
