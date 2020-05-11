@@ -72,7 +72,7 @@
     "jest-environment-node": "24.9.0",
     "mongodb-memory-server": "6.0.1",
     "prettier": "1.19.1",
-    "serverless": "1.32.0",
+    "serverless": "1.70.1",
     "serverless-domain-manager": "2.6.5",
     "serverless-offline": "3.27.0",
     "split": "1.0.1",
