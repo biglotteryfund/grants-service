@@ -36,17 +36,17 @@ const COMMON_WORDS = [
     'grants',
     'school',
     'award',
-    'local'
+    'local',
 ];
 
 const DEFAULT_SORT = {
     criteria: { awardDate: -1 },
-    value: 'awardDate|desc'
+    value: 'awardDate|desc',
 };
 
 const DEFAULT_SORT_QUERY = {
     criteria: { score: { $meta: 'textScore' } },
-    value: 'score|desc'
+    value: 'score|desc',
 };
 
 /**
@@ -66,7 +66,7 @@ function determineSort(queryParams) {
 
             sort = {
                 criteria: criteria,
-                value: queryParams.sort
+                value: queryParams.sort,
             };
         }
     } else if (queryParams.q) {
@@ -83,26 +83,26 @@ function buildSortMeta(sort, queryParams) {
     const sortOptions = [
         {
             label: getTranslation(langKey, 'Most recent', locale),
-            value: 'awardDate|desc'
+            value: 'awardDate|desc',
         },
         {
             label: getTranslation(langKey, 'Oldest first', locale),
-            value: 'awardDate|asc'
+            value: 'awardDate|asc',
         },
         {
             label: getTranslation(langKey, 'Lowest amount first', locale),
-            value: 'amountAwarded|asc'
+            value: 'amountAwarded|asc',
         },
         {
             label: getTranslation(langKey, 'Highest amount first', locale),
-            value: 'amountAwarded|desc'
-        }
+            value: 'amountAwarded|desc',
+        },
     ];
 
     if (queryParams.q) {
         sortOptions.unshift({
             label: getTranslation(langKey, 'Most relevant', locale),
-            value: 'score|desc'
+            value: 'score|desc',
         });
     }
 
@@ -111,7 +111,7 @@ function buildSortMeta(sort, queryParams) {
             ? DEFAULT_SORT_QUERY.value
             : DEFAULT_SORT.value,
         activeSort: sort.value,
-        sortOptions: sortOptions
+        sortOptions: sortOptions,
     };
 }
 
@@ -155,7 +155,7 @@ function translateOrgTypes({ grant, locale }) {
 // Hackily re-create existing array structure to avoid rewriting templates for now
 function makeObjectsArrays({ grant, locale }) {
     ['recipientOrganization', 'fundingOrganization', 'grantProgramme'].forEach(
-        field => {
+        (field) => {
             grant[field] = [grant[field]];
         }
     );
@@ -186,7 +186,7 @@ async function getSearchSuggestions(locale, totalGrantsForQuery, queryParams) {
         try {
             result = await checkSpelling({
                 searchTerm: queryParams.q,
-                locale: locale
+                locale: locale,
             });
         } catch (e) {
             console.error(e);
@@ -213,7 +213,7 @@ async function buildMatchCriteria(queryParams) {
      * use the index so we set something here that matches everything.
      */
     match.$and.push({
-        awardDate: { $exists: true }
+        awardDate: { $exists: true },
     });
     /**
      * Grant amount
@@ -222,9 +222,9 @@ async function buildMatchCriteria(queryParams) {
     if (queryParams.amount) {
         const [minAmount, maxAmount] = queryParams.amount
             .split('|')
-            .map(num => parseInt(num, 10));
+            .map((num) => parseInt(num, 10));
         match.$and.push({
-            amountAwarded: { $gte: minAmount || 0, $lt: maxAmount || Infinity }
+            amountAwarded: { $gte: minAmount || 0, $lt: maxAmount || Infinity },
         });
     }
 
@@ -242,14 +242,14 @@ async function buildMatchCriteria(queryParams) {
         } else {
             [start, end] = queryParams.awardDate
                 .split('|')
-                .map(str => moment(str));
+                .map((str) => moment(str));
         }
 
         if (start && end) {
             // Ensure the end date is always the last second of the day
             end = end.set({ hour: 23, minute: 59, second: 59 });
             match.$and.push({
-                awardDate: { $gte: start.toDate(), $lt: end.toDate() }
+                awardDate: { $gte: start.toDate(), $lt: end.toDate() },
             });
         }
     }
@@ -260,8 +260,8 @@ async function buildMatchCriteria(queryParams) {
     if (queryParams.programme) {
         match.$and.push({
             'grantProgramme.title': {
-                $eq: queryParams.programme
-            }
+                $eq: queryParams.programme,
+            },
         });
     }
 
@@ -273,14 +273,14 @@ async function buildMatchCriteria(queryParams) {
             {
                 'recipientOrganization.organisationType': {
                     $regex: `^${queryParams.orgType}`,
-                    $options: 'i'
-                }
+                    $options: 'i',
+                },
             },
             {
                 'recipientOrganization.organisationSubtype': {
                     $regex: `^${queryParams.orgType}`,
-                    $options: 'i'
-                }
+                    $options: 'i',
+                },
             }
         );
     }
@@ -293,9 +293,9 @@ async function buildMatchCriteria(queryParams) {
             beneficiaryLocation: {
                 $elemMatch: {
                     geoCode: queryParams.localAuthority,
-                    geoCodeType: GEOCODE_TYPES.localAuthority
-                }
-            }
+                    geoCodeType: GEOCODE_TYPES.localAuthority,
+                },
+            },
         });
     }
 
@@ -307,9 +307,9 @@ async function buildMatchCriteria(queryParams) {
             beneficiaryLocation: {
                 $elemMatch: {
                     geoCode: queryParams.westminsterConstituency,
-                    geoCodeType: GEOCODE_TYPES.constituency
-                }
-            }
+                    geoCodeType: GEOCODE_TYPES.constituency,
+                },
+            },
         });
     }
 
@@ -319,8 +319,8 @@ async function buildMatchCriteria(queryParams) {
     if (queryParams.recipient) {
         match.$and.push({
             'recipientOrganization.id': {
-                $eq: queryParams.recipient
-            }
+                $eq: queryParams.recipient,
+            },
         });
     }
 
@@ -328,9 +328,9 @@ async function buildMatchCriteria(queryParams) {
         match.$and.push({
             id: {
                 $not: {
-                    $eq: queryParams.exclude
-                }
-            }
+                    $eq: queryParams.exclude,
+                },
+            },
         });
     }
 
@@ -350,14 +350,14 @@ async function buildMatchCriteria(queryParams) {
     if (queryParams.q) {
         if (queryParams.q.indexOf('"') === -1 && !queryParams.related) {
             // Split our query into words and make it lowercase
-            let terms = queryParams.q.split(' ').map(s => s.toLowerCase());
+            let terms = queryParams.q.split(' ').map((s) => s.toLowerCase());
             // Exclude common words from the query
             let termsMinusCommon = difference(terms, COMMON_WORDS);
             if (termsMinusCommon.length !== 0) {
                 terms = termsMinusCommon;
             }
             // Quote each word (eg. AND search)
-            terms = terms.map(term => {
+            terms = terms.map((term) => {
                 // Don't wrap a word in quotes if this is negation
                 return /^-/.test(term) ? term : `"${term}"`;
             });
@@ -366,7 +366,7 @@ async function buildMatchCriteria(queryParams) {
         }
 
         match.$text = {
-            $search: queryParams.q
+            $search: queryParams.q,
         };
     }
 
@@ -381,8 +381,8 @@ async function buildMatchCriteria(queryParams) {
                 method: 'GET',
                 url: `https://api.postcodes.io/postcodes?q=${queryParams.postcode}`,
                 headers: {
-                    'Content-Type': 'application/json'
-                }
+                    'Content-Type': 'application/json',
+                },
             });
 
             if (postcodeData && postcodeData.result) {
@@ -393,10 +393,10 @@ async function buildMatchCriteria(queryParams) {
                             $in: [
                                 firstMatch.codes.admin_district,
                                 firstMatch.codes.admin_ward,
-                                firstMatch.codes.parliamentary_constituency
-                            ]
-                        }
-                    }
+                                firstMatch.codes.parliamentary_constituency,
+                            ],
+                        },
+                    },
                 ]);
             }
         } catch (requestError) {
@@ -443,22 +443,22 @@ function buildLocationFacet(geoCodeType) {
                     $filter: {
                         input: '$beneficiaryLocation',
                         as: 'location',
-                        cond: { $eq: ['$$location.geoCodeType', geoCodeType] }
-                    }
-                }
-            }
+                        cond: { $eq: ['$$location.geoCodeType', geoCodeType] },
+                    },
+                },
+            },
         },
         {
             $group: {
                 _id: {
-                    $arrayElemAt: ['$items.name', 0]
+                    $arrayElemAt: ['$items.name', 0],
                 },
                 code: { $first: { $arrayElemAt: ['$items.geoCode', 0] } },
-                count: { $sum: 1 }
-            }
+                count: { $sum: 1 },
+            },
         },
         { $sort: { _id: 1 } },
-        { $project: { label: '$_id', value: '$code', count: 1 } }
+        { $project: { label: '$_id', value: '$code', count: 1 } },
     ];
 }
 
@@ -475,11 +475,11 @@ function buildFacetCriteria() {
             {
                 $group: {
                     _id: { $arrayElemAt: ['$beneficiaryLocation.country', 0] },
-                    count: { $sum: 1 }
-                }
+                    count: { $sum: 1 },
+                },
             },
             { $sort: { _id: 1 } },
-            { $project: { count: 1, label: '$_id', value: '$_id' } }
+            { $project: { count: 1, label: '$_id', value: '$_id' } },
         ],
 
         amountAwarded: [
@@ -488,10 +488,10 @@ function buildFacetCriteria() {
                     groupBy: '$amountAwarded',
                     boundaries: AMOUNT_AWARDED_BUCKETS,
                     output: {
-                        count: { $sum: 1 }
-                    }
-                }
-            }
+                        count: { $sum: 1 },
+                    },
+                },
+            },
         ],
 
         localAuthorities: buildLocationFacet(GEOCODE_TYPES.localAuthority),
@@ -504,22 +504,22 @@ function buildFacetCriteria() {
             {
                 $group: {
                     _id: { $year: '$awardDate' },
-                    count: { $sum: 1 }
-                }
+                    count: { $sum: 1 },
+                },
             },
             { $sort: { _id: -1 } },
-            { $project: { count: 1, label: '$_id', value: '$_id' } }
+            { $project: { count: 1, label: '$_id', value: '$_id' } },
         ],
 
         grantProgramme: [
             {
                 $group: {
                     _id: '$grantProgramme.title',
-                    count: { $sum: 1 }
-                }
+                    count: { $sum: 1 },
+                },
             },
             { $sort: { _id: 1 } },
-            { $project: { count: 1, label: '$_id', value: '$_id' } }
+            { $project: { count: 1, label: '$_id', value: '$_id' } },
         ],
 
         orgType: [
@@ -527,14 +527,14 @@ function buildFacetCriteria() {
                 $group: {
                     _id: {
                         type: '$recipientOrganization.organisationType',
-                        subtype: '$recipientOrganization.organisationSubtype'
+                        subtype: '$recipientOrganization.organisationSubtype',
                     },
-                    count: { $sum: 1 }
-                }
+                    count: { $sum: 1 },
+                },
             },
             { $sort: { _id: 1 } },
-            { $project: { count: 1, label: '$_id.type', value: '$_id.type' } }
-        ]
+            { $project: { count: 1, label: '$_id.type', value: '$_id.type' } },
+        ],
     };
 }
 
@@ -561,7 +561,7 @@ async function fetchFacets(
     const facets = head(facetsResult);
 
     // Tweak the amountAwarded facet for the custom UI
-    facets.amountAwarded = facets.amountAwarded.map(amount => {
+    facets.amountAwarded = facets.amountAwarded.map((amount) => {
         // Try to find the next bucket item after this one
         let lowerBound = amount._id;
         let upperBound =
@@ -598,21 +598,21 @@ async function fetchFacets(
     });
 
     // Combine org types
-    facets.orgType = facets.orgType.filter(f => !!f.value);
-    let orgGroups = groupBy(facets.orgType, f => {
+    facets.orgType = facets.orgType.filter((f) => !!f.value);
+    let orgGroups = groupBy(facets.orgType, (f) => {
         return getTranslation('orgTypes', f._id.type, locale);
     });
     for (let parentGroup in orgGroups) {
         let total = 0;
         orgGroups[parentGroup] = orgGroups[parentGroup]
-            .map(group => {
+            .map((group) => {
                 total += group.count;
                 const name = group._id.subtype;
                 return {
                     _id: name,
                     count: group.count,
                     label: name,
-                    value: name
+                    value: name,
                 };
             })
             .sort((a, b) => a.label > b.label);
@@ -623,7 +623,7 @@ async function fetchFacets(
             _id: parentAll,
             count: total,
             label: parentAll,
-            value: parentGroup
+            value: parentGroup,
         });
 
         orgGroups[parentGroup] = orgGroups[parentGroup].map(
@@ -635,7 +635,7 @@ async function fetchFacets(
     /**
      * Convert date facets into ranges
      */
-    const awardDateOptions = facets.awardDate.map(awardDate => {
+    const awardDateOptions = facets.awardDate.map((awardDate) => {
         const year = awardDate.value;
         const start = moment(new Date(year, 0, 1)).format(URL_DATE_FORMAT);
         const end = moment(new Date(year, 11, 31)).format(URL_DATE_FORMAT);
@@ -657,7 +657,7 @@ async function fetchFacets(
                 awardDateOptions.unshift({
                     _id: `last6Months`,
                     label: getTranslation('misc', `Last six months`, locale),
-                    value: 'last6Months'
+                    value: 'last6Months',
                 });
             }
 
@@ -665,7 +665,7 @@ async function fetchFacets(
                 awardDateOptions.unshift({
                     _id: `last3Months`,
                     label: getTranslation('misc', `Last three months`, locale),
-                    value: 'last3Months'
+                    value: 'last3Months',
                 });
             }
         }
@@ -675,15 +675,15 @@ async function fetchFacets(
 
     // Strip out empty locations from missing geocodes
     facets.countries = facets.countries
-        .filter(f => !!f._id)
+        .filter((f) => !!f._id)
         .map(translateLabels('countries', locale));
 
     facets.localAuthorities = facets.localAuthorities
-        .filter(f => !!f._id)
+        .filter((f) => !!f._id)
         .map(translateLabels('localAuthorities', locale));
 
     facets.westminsterConstituencies = facets.westminsterConstituencies
-        .filter(f => !!f._id)
+        .filter((f) => !!f._id)
         .map(translateLabels('westminsterConstituencies', locale));
 
     return facets;
@@ -705,7 +705,7 @@ function buildPagination(
             if (this.totalPages > 1 && this.currentPage > 1) {
                 return querystring.stringify(
                     Object.assign({}, queryParams, {
-                        page: this.currentPage - 1
+                        page: this.currentPage - 1,
                     })
                 );
             }
@@ -715,12 +715,12 @@ function buildPagination(
             if (this.totalPages > 1 && this.currentPage < this.totalPages) {
                 return querystring.stringify(
                     Object.assign({}, queryParams, {
-                        page: this.currentPage + 1
+                        page: this.currentPage + 1,
                     })
                 );
             }
             return undefined;
-        }
+        },
     };
 }
 
@@ -729,7 +729,7 @@ async function fetchTotalAwarded(grantsCollection, matchCriteria) {
         .aggregate([
             { $match: matchCriteria },
             { $group: { _id: null, sum: { $sum: '$amountAwarded' } } },
-            { $project: { _id: 0, sum: 1 } }
+            { $project: { _id: 0, sum: 1 } },
         ])
         .toArray();
     totalAwarded = get(totalAwarded, '[0].sum', false);
@@ -763,7 +763,7 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
     const sort = determineSort(queryParams);
     const matchCriteria = await buildMatchCriteria(queryParams);
 
-    const hasOnlyQuery = name =>
+    const hasOnlyQuery = (name) =>
         Object.keys(queryParams).length === 1 && has(queryParams, name);
 
     /**
@@ -784,7 +784,7 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
             ? { $project: { _id: 0 } }
             : null,
 
-        { $sort: sort.criteria }
+        { $sort: sort.criteria },
     ]);
 
     /**
@@ -793,8 +793,8 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
     if (queryParams.q) {
         resultsPipeline.push({
             $addFields: {
-                _textScore: { $meta: 'textScore' }
-            }
+                _textScore: { $meta: 'textScore' },
+            },
         });
     }
 
@@ -807,7 +807,7 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
     const firstGrant = await mongo.grantsCollection
         .find({})
         .sort({
-            awardDate: -1
+            awardDate: -1,
         })
         .limit(1)
         .toArray();
@@ -815,14 +815,14 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
     const lastGrant = await mongo.grantsCollection
         .find({})
         .sort({
-            awardDate: 1
+            awardDate: 1,
         })
         .limit(1)
         .toArray();
 
     const grantDates = {
         end: getDate(firstGrant),
-        start: getDate(lastGrant)
+        start: getDate(lastGrant),
     };
 
     const totalGrantsForQuery = await mongo.grantsCollection
@@ -844,7 +844,7 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
         .toArray();
 
     // Add any final fields we need before output
-    grantsResult = grantsResult.map(grant => addGrantDetail(grant, locale));
+    grantsResult = grantsResult.map((grant) => addGrantDetail(grant, locale));
 
     let facets;
     if (!queryParams.related) {
@@ -888,10 +888,10 @@ async function fetchGrants(mongo, locale = 'en', queryParams) {
                 skipCount,
                 totalGrantsForQuery,
                 queryParams
-            )
+            ),
         },
         facets: facets,
-        results: grantsResult
+        results: grantsResult,
     };
 }
 
@@ -908,7 +908,7 @@ async function fetchGrantByRecipient(
     const locale = queryParams.locale || 'en';
 
     const matchCriteria = await buildMatchCriteria({
-        recipient: recipientId
+        recipient: recipientId,
     });
 
     /**
@@ -918,7 +918,7 @@ async function fetchGrantByRecipient(
      */
     const resultsPipeline = [
         { $match: matchCriteria },
-        { $sort: { 'awardDate': -1, 'recipientOrganization.id': 1 } }
+        { $sort: { 'awardDate': -1, 'recipientOrganization.id': 1 } },
     ];
 
     let grantsResult = await grantsCollection
@@ -928,7 +928,7 @@ async function fetchGrantByRecipient(
         .toArray();
 
     // Add any final fields we need before output
-    grantsResult = grantsResult.map(grant => addGrantDetail(grant, locale));
+    grantsResult = grantsResult.map((grant) => addGrantDetail(grant, locale));
 
     const facetsResult = await grantsCollection
         .aggregate([
@@ -939,14 +939,20 @@ async function fetchGrantByRecipient(
                         {
                             $group: {
                                 _id: '$grantProgramme.title',
-                                count: { $sum: 1 }
-                            }
+                                count: { $sum: 1 },
+                            },
                         },
                         { $sort: { _id: 1 } },
-                        { $project: { count: 1, label: '$_id', value: '$_id' } }
-                    ]
-                }
-            }
+                        {
+                            $project: {
+                                count: 1,
+                                label: '$_id',
+                                value: '$_id',
+                            },
+                        },
+                    ],
+                },
+            },
         ])
         .toArray();
 
@@ -972,10 +978,10 @@ async function fetchGrantByRecipient(
                 skipCount,
                 totalGrantsForQuery,
                 queryParams
-            )
+            ),
         },
         facets: head(facetsResult),
-        results: grantsResult
+        results: grantsResult,
     };
 }
 
@@ -995,5 +1001,5 @@ module.exports = {
     fetchGrants,
     fetchGrantById,
     fetchGrantByRecipient,
-    fetchFacets
+    fetchFacets,
 };
