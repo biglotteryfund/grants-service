@@ -4,7 +4,7 @@ function normaliseError(error) {
     let errorCode = {
         status: 400,
         code: 'ERR-UNKNOWN',
-        title: 'Unknown error'
+        title: 'Unknown error',
     };
 
     switch (error.message) {
@@ -12,21 +12,21 @@ function normaliseError(error) {
             errorCode = {
                 status: 400,
                 code: 'ERR-POSTCODE',
-                title: 'Invalid postcode lookup'
+                title: 'Invalid postcode lookup',
             };
             break;
         case 'PostcodeApiFailure':
             errorCode = {
                 status: 400,
                 code: 'ERR-POSTCODE-API',
-                title: 'Error with postcodes.io API'
+                title: 'Error with postcodes.io API',
             };
             break;
         case 'MongoConnect':
             errorCode = {
                 status: 400,
                 code: 'ERR-DB-CONN',
-                title: 'Could not connect to Mongo'
+                title: 'Could not connect to Mongo',
             };
             break;
         default:
@@ -37,5 +37,5 @@ function normaliseError(error) {
 }
 
 module.exports = {
-    normaliseError
+    normaliseError,
 };

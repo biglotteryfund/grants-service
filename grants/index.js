@@ -8,7 +8,7 @@ const {
     fetchGrants,
     fetchGrantById,
     fetchGrantByRecipient,
-    fetchFacets
+    fetchFacets,
 } = require('./search');
 const { normaliseError } = require('./errors');
 
@@ -30,7 +30,7 @@ router.route('/').get(async (req, res) => {
         const normalisedError = normaliseError(error);
         res.status(normalisedError.status).json({
             result: null,
-            error: normalisedError
+            error: normalisedError,
         });
     }
 });
@@ -41,14 +41,14 @@ router.get('/build-facets', async (req, res) => {
 
         const latestGrant = await fetchGrants(mongo, 'en', {
             limit: 1,
-            sort: 'awardDate|desc'
+            sort: 'awardDate|desc',
         });
 
-        const getFacets = async locale =>
+        const getFacets = async (locale) =>
             fetchFacets(
                 mongo.grantsCollection,
                 {
-                    awardDate: { $exists: true }
+                    awardDate: { $exists: true },
                 },
                 locale,
                 latestGrant
@@ -59,7 +59,7 @@ router.get('/build-facets', async (req, res) => {
 
         await mongo.facetsCollection.insertOne({
             en: resultsEn,
-            cy: resultsCy
+            cy: resultsCy,
         });
         mongo.client.close();
         res.json({ resultsEn, resultsCy });
@@ -68,7 +68,7 @@ router.get('/build-facets', async (req, res) => {
         const normalisedError = normaliseError(error);
         res.status(normalisedError.status).json({
             result: null,
-            error: normalisedError
+            error: normalisedError,
         });
     }
 });
@@ -88,7 +88,7 @@ router.route('/recipient/:id').get(async (req, res) => {
         const normalisedError = normaliseError(error);
         res.status(normalisedError.status).json({
             result: null,
-            error: normalisedError
+            error: normalisedError,
         });
     }
 });
@@ -108,7 +108,7 @@ router.route('/:id').get(async (req, res) => {
         const normalisedError = normaliseError(error);
         res.status(normalisedError.status).json({
             result: null,
-            error: normalisedError
+            error: normalisedError,
         });
     }
 });
