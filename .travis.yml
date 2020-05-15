@@ -17,13 +17,13 @@ cache:
 
 # Deploy steps
 deploy:
-- provider: script
-  script: npm run deployTest
-  skip_cleanup: true
-  on:
-    branch: master
-- provider: script
-  script: npm run deployProd
-  skip_cleanup: true
-  on:
-    tags: true
+  - provider: script
+    script: npm run deployTest
+    skip_cleanup: true
+    on:
+      branch: master
+  - provider: script
+    script: npm run deployProd
+    skip_cleanup: true
+    on:
+      tags: true

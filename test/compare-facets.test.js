@@ -15,9 +15,9 @@ describe('Grants import process', () => {
 
     it('should not retroactively add past grants', () => {
         expect(
-            facetsNew.resultsEn.awardDate.find(_ => _._id === 2018).count
+            facetsNew.resultsEn.awardDate.find((_) => _._id === 2018).count
         ).toEqual(
-            facetsOld.resultsEn.awardDate.find(_ => _._id === 2018).count
+            facetsOld.resultsEn.awardDate.find((_) => _._id === 2018).count
         );
     });
 

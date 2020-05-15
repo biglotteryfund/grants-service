@@ -10,7 +10,7 @@
   "scripts": {
     "start": "sls offline start --dontPrintOutput",
     "test": "eslint . && jest --detectOpenHandles --testPathIgnorePatterns compare-facets.test.js",
-    "format": "prettier --write *.js *.yml {grants,lib,test}/**/*.js README.md",
+    "format": "prettier --write .",
     "deployTest": "sls deploy --stage=test --region=eu-west-2",
     "deployProd": "sls deploy --stage=prod --region=eu-west-2"
   },
