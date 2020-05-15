@@ -10,7 +10,7 @@
   "scripts": {
     "start": "sls offline start --dontPrintOutput",
     "test": "eslint . && jest --detectOpenHandles --testPathIgnorePatterns compare-facets.test.js",
-    "format": "prettier --write *.js *.yml {grants,lib,test}/**/*.js README.md",
+    "format": "prettier --write .",
     "deployTest": "sls deploy --stage=test --region=eu-west-2",
     "deployProd": "sls deploy --stage=prod --region=eu-west-2"
   },
@@ -71,7 +71,7 @@
     "jest": "24.9.0",
     "jest-environment-node": "24.9.0",
     "mongodb-memory-server": "6.0.1",
-    "prettier": "1.19.1",
+    "prettier": "2.0.5",
     "serverless": "1.32.0",
     "serverless-domain-manager": "2.6.5",
     "serverless-offline": "3.27.0",
