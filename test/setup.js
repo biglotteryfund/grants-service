@@ -9,17 +9,17 @@ const globalConfigPath = path.join(__dirname, 'globalConfig.json');
 
 const mongod = new MongodbMemoryServer.default({
     instance: {
-        dbName: 'jest'
+        dbName: 'jest',
     },
     binary: {
-        version: '3.6.5'
-    }
+        version: '3.6.5',
+    },
 });
 
-module.exports = async function() {
+module.exports = async function () {
     const mongoConfig = {
         mongoDBName: 'jest',
-        mongoUri: await mongod.getConnectionString()
+        mongoUri: await mongod.getConnectionString(),
     };
 
     // Write global config to disk because all tests run in different contexts.

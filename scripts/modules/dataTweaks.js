@@ -4,12 +4,12 @@
 const programmesToRename = [
     {
         from: 'UK Accelerating Ideas',
-        to: 'UK Portfolio'
+        to: 'UK Portfolio',
     },
     {
         from: 'Fulfilling lives: HeadStart',
-        to: 'Fulfilling Lives: HeadStart'
-    }
+        to: 'Fulfilling Lives: HeadStart',
+    },
 ];
 
 // Programmes we don't display on the website
@@ -22,5 +22,5 @@ const invalidGrantIds = ['360G-blf-0031057998', '360G-blf-0031059356'];
 module.exports = {
     programmesToRename,
     invalidProgrammeCodes,
-    invalidGrantIds
+    invalidGrantIds,
 };
