@@ -88,7 +88,7 @@ describe('Past Grants Search', () => {
         expect(grants.results.length).toBe(41);
     });
 
-    it('should find grants by postcode', async () => {
+    xit('should find grants by postcode', async () => {
         const grants = await queryGrants({
             postcode: 'BN13 1NQ',
         });
