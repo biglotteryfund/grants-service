@@ -29,7 +29,8 @@ plugins:
 custom:
   stage: ${opt:stage, self:provider.stage}
   serverless-offline:
-    port: 8888
+    httpPort: 8888
+    noPrependStageInUrl: true
   domains:
     prod: lambda.blf.digital
     test: test-lambda.blf.digital

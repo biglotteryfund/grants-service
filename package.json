@@ -48,34 +48,34 @@
     "singleQuote": true,
     "quoteProps": "consistent"
   },
-  "dependencies": {
-    "dictionary-cy-gb": "1.0.0",
-    "dictionary-en-gb": "2.1.1",
-    "dotenv": "6.1.0",
-    "express": "4.16.4",
-    "lodash": "4.17.15",
-    "moment": "^2.24.0",
-    "mongodb": "3.1.8",
-    "nspell": "2.1.2",
-    "request": "2.88.0",
-    "request-promise-native": "^1.0.5",
-    "server-timings": "2.0.1",
-    "serverless-http": "^1.6.0"
-  },
   "devDependencies": {
-    "csv-parse": "3.0.0",
-    "csv-parser": "1.12.1",
-    "event-stream": "3.3.4",
-    "eslint": "7.0.0",
+    "csv-parse": "4.10.1",
+    "csv-parser": "2.3.3",
+    "eslint": "7.2.0",
     "eslint-plugin-node": "11.1.0",
+    "event-stream": "4.0.1",
     "jest": "26.0.1",
     "jest-environment-node": "26.0.1",
-    "mongodb-memory-server": "6.0.1",
+    "mongodb-memory-server": "6.6.1",
     "prettier": "2.0.5",
-    "serverless": "1.32.0",
-    "serverless-domain-manager": "2.6.5",
-    "serverless-offline": "3.27.0",
+    "serverless": "1.73.1",
+    "serverless-domain-manager": "4.1.1",
+    "serverless-offline": "6.4.0",
     "split": "1.0.1",
-    "yargs": "^13.3.0"
+    "yargs": "15.3.1"
+  },
+  "dependencies": {
+    "dictionary-cy-gb": "1.0.0",
+    "dictionary-en-gb": "2.2.2",
+    "dotenv": "8.2.0",
+    "express": "4.17.1",
+    "lodash": "4.17.15",
+    "moment": "2.26.0",
+    "mongodb": "3.5.9",
+    "nspell": "2.1.2",
+    "request": "2.88.2",
+    "request-promise-native": "1.0.8",
+    "server-timings": "2.0.1",
+    "serverless-http": "2.5.0"
   }
 }
