@@ -15,6 +15,7 @@ functions:
       - http: 'ANY {proxy+}'
 
 package:
+  excludeDevDependencies: false
   exclude:
     - .*
     - .git/**
