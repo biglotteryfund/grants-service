@@ -15,6 +15,7 @@ describe('Past Grants Search', () => {
     beforeAll(async () => {
         connection = await MongoClient.connect(global.__MONGO_URI__, {
             useNewUrlParser: true,
+            useUnifiedTopology: true,
         });
         db = await connection.db(global.__MONGO_DB_NAME__);
 
@@ -87,11 +88,11 @@ describe('Past Grants Search', () => {
         expect(grants.results.length).toBe(41);
     });
 
-    xit('should find grants by postcode', async () => {
+    it('should find grants by postcode', async () => {
         const grants = await queryGrants({
             postcode: 'BN13 1NQ',
         });
-        expect(grants.results[0].title).toEqual('Meetings and outings');
+        expect(grants.results[0].title).toEqual('New Equipment');
     });
 
     it('should combine filters', async () => {
