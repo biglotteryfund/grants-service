@@ -65,8 +65,12 @@ const parseDates = data => {
 
 // Split organisation strings into proper structures
 const separateOrgType = data => {
+    // Format used in oldest data
     const orgTypeKey = 'BIGField_Organisation_Type';
+    // Format used in newer data
     const orgTypeKeyNew = 'BIGField:Organisation Type';
+    // Format used in post-GMS data (phew!)
+    const orgTypeKeyFinal = 'Recipient Org:Organisation Type';
 
     // Older records (pre-2019) used a single field for this (`BIGField_Organisation_Type`)
     // but newer ones split it like so: `BIGField:Organisation Type:Charity`
@@ -106,16 +110,15 @@ const separateOrgType = data => {
         });
     }
 
+    // Now we've normalised each record into having a consistent label/value,
+    // we can clean the weird strings into something consistent
     if (data[orgTypeKey]) {
-        data.organisationType = data[orgTypeKey];
+        // Replace the space around the colon with normal grammar
+        data.organisationType = data[orgTypeKey].replace(' : ', ': ');
         delete data[orgTypeKey];
-
-        const parts = data.organisationType.split(' : ');
-
-        if (parts.length > 1) {
-            data.organisationType = parts[0];
-            data.organisationSubtype = parts[1];
-        }
+    } else if (data[orgTypeKeyFinal]) {
+        // If it uses the new format we don't need to do anything except assign it
+        data.organisationType = data[orgTypeKeyFinal];
     }
     return data;
 };
@@ -162,7 +165,6 @@ const renameFields = data => {
             companyNumber: data['Recipient Org:Company Number'] || undefined,
             // @TODO https://github.com/OpenDataServices/grantnav/issues/490
             organisationType: data['organisationType'],
-            organisationSubtype: data['organisationSubtype']
         },
         fundingOrganization: {
             id: data['Funding Org:Identifier'],
@@ -370,7 +372,7 @@ getStream().pipe(es.mapSync((data) => {
             data[programme.code] = {
                 '_id': programme.title,
                 'code': programme.code,
-                'urlPath': '/relative/url/goes/here'
+                'urlPath': 'funding-programme-slug-in-cms-goes-here'
             };
         });
         console.log(JSON.stringify(data, null, 4));

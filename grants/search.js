@@ -8,7 +8,6 @@ const difference = require('lodash/difference');
 const flow = require('lodash/flow');
 const get = require('lodash/get');
 const getFp = require('lodash/fp/get');
-const groupBy = require('lodash/groupBy');
 const has = require('lodash/has');
 const head = require('lodash/head');
 const sortBy = require('lodash/sortBy');
@@ -138,14 +137,10 @@ function addFundingProgrammeDetail({ grant, locale }) {
 
 // Translate the organisation types in the data itself as well as the facets
 function translateOrgTypes({ grant, locale }) {
+    // @TODO some of these are outdated / need replacing
     grant.recipientOrganization.organisationType = getTranslation(
         'orgTypes',
         grant.recipientOrganization.organisationType,
-        locale
-    );
-    grant.recipientOrganization.organisationSubtype = getTranslation(
-        'orgTypes',
-        grant.recipientOrganization.organisationSubtype,
         locale
     );
     return { grant, locale };
@@ -276,12 +271,6 @@ async function buildMatchCriteria(queryParams) {
                     $options: 'i',
                 },
             },
-            {
-                'recipientOrganization.organisationSubtype': {
-                    $regex: `^${queryParams.orgType}`,
-                    $options: 'i',
-                },
-            }
         );
     }
 
@@ -525,15 +514,12 @@ function buildFacetCriteria() {
         orgType: [
             {
                 $group: {
-                    _id: {
-                        type: '$recipientOrganization.organisationType',
-                        subtype: '$recipientOrganization.organisationSubtype',
-                    },
+                    _id: '$recipientOrganization.organisationType',
                     count: { $sum: 1 },
                 },
             },
             { $sort: { _id: 1 } },
-            { $project: { count: 1, label: '$_id.type', value: '$_id.type' } },
+            { $project: { count: 1, label: '$_id', value: '$_id' } },
         ],
     };
 }
@@ -597,40 +583,9 @@ async function fetchFacets(
         return amount;
     });
 
-    // Combine org types
+    // Strip out empty org types
     facets.orgType = facets.orgType.filter((f) => !!f.value);
-    let orgGroups = groupBy(facets.orgType, (f) => {
-        return getTranslation('orgTypes', f._id.type, locale);
-    });
-    for (let parentGroup in orgGroups) {
-        let total = 0;
-        orgGroups[parentGroup] = orgGroups[parentGroup]
-            .map((group) => {
-                total += group.count;
-                const name = group._id.subtype;
-                return {
-                    _id: name,
-                    count: group.count,
-                    label: name,
-                    value: name,
-                };
-            })
-            .sort((a, b) => a.label > b.label);
 
-        // Add an overall count at the start
-        const parentAll = `${parentGroup}: All`;
-        orgGroups[parentGroup].unshift({
-            _id: parentAll,
-            count: total,
-            label: parentAll,
-            value: parentGroup,
-        });
-
-        orgGroups[parentGroup] = orgGroups[parentGroup].map(
-            translateLabels('orgTypes', locale)
-        );
-    }
-    facets.orgType = orgGroups;
 
     /**
      * Convert date facets into ranges
