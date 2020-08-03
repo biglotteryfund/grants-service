@@ -1,6 +1,5 @@
 # Defaults
 language: node_js
-node_js: '10'
 
 # Install dependencies
 install: npm ci --quiet --prefer-offline
