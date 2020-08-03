@@ -20,7 +20,8 @@ echo "Looking up current live facet data..."
 curl --silent --max-time 120 https://lambda.blf.digital/past-grants-search/build-facets > facets-old.json
 echo "Done."
 echo "Computing new facet data based on this import..."
-export MONGO_DB=$DATABASE_NAME && export MONGO_COLLECTION=$COLLECTION_NAME && sls offline start --exec="curl --silent http://localhost:8888/past-grants-search/build-facets > facets-new.json"
+echo "(Ensure you have the app running on localhost:8888 so we can fetch the data)"
+export MONGO_DB=$DATABASE_NAME && export MONGO_COLLECTION=$COLLECTION_NAME && curl --silent http://localhost:8888/past-grants-search/build-facets > facets-new.json
 echo "Done."
 echo "Running tests to ensure major facets have not changed"
 jest ./test/compare-facets.test.js;
