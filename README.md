@@ -4,7 +4,7 @@ This service is a lambda function which queries an external MongoDB instance for
 
 ## Getting started
 
-You'll need to download at least one of the existing datasets from the [GrantNav publisher page](http://grantnav.threesixtygiving.org/publisher/360G-blf) for the Fund.
+You'll need to download at least one of the existing datasets from the [GrantNav publisher page](http://grantnav.threesixtygiving.org/funder/GB-GOR-PB188) for the Fund, or from [our own Data page](https://www.tnlcommunityfund.org.uk/data).
 
 Make sure the CSV doesn't have a space as the very first character as this has been known to break imports in mysterious ways
 (eg. `Amount Awarded` is not correctly parsed).
