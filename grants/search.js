@@ -687,7 +687,7 @@ async function fetchTotalAwarded(grantsCollection, matchCriteria) {
             { $project: { _id: 0, sum: 1 } },
         ])
         .toArray();
-    totalAwarded = get(totalAwarded, '[0].sum', false);
+    totalAwarded = Math.round(get(totalAwarded, '[0].sum', false));
     return totalAwarded;
 }
 
