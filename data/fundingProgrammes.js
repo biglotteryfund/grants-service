@@ -1232,4 +1232,9 @@ module.exports = {
         code: 'STF1',
         urlPath: 'safeguarding-training-fund-phase-1',
     },
+    'CAF1': {
+        _id: 'Climate Action Fund',
+        code: 'CAF1',
+        urlPath: 'climate-action-fund',
+    },
 };
