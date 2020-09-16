@@ -322,6 +322,10 @@ const checkValidGrant = data => {
 };
 
 const checkForMissingPressSummary = data => {
+    if (!data.description) {
+        console.log('Grant is missing description field', data);
+        return true;
+    }
     return data.description.trim().toLowerCase().indexOf('no press summary is available in this release') !== -1;
 };
 
