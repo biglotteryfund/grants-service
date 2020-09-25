@@ -49,7 +49,7 @@ describe('Past Grants Search', () => {
             sort: 'amountAwarded|asc',
         });
         const firstResult = grants.results[0];
-        expect(firstResult.title).toBe('Purchase of digital camera & printer');
+        expect(firstResult.title).toBe('75th anniversary outing');
         expect(grants.results.length).toBe(testLimit);
     });
 
