@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "nodemon --exec sls offline --dontPrintOutput",
+    "start-test": "sls offline --dontPrintOutput",
     "test": "eslint . && jest --detectOpenHandles --testPathIgnorePatterns compare-facets.test.js",
     "format": "prettier --write .",
     "deployTest": "sls deploy --stage=test --region=eu-west-2",
