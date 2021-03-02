@@ -20,6 +20,7 @@ package:
     - .git/**
     - scripts/**
     - test/**
+    - data/**
 
 plugins:
   - serverless-offline
