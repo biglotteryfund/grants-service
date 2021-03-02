@@ -325,6 +325,11 @@ module.exports = {
         code: 'CN1',
         urlPath: 'multiple-and-complex-needs',
     },
+    'CCSF': {
+        _id: 'Coronavirus Community Support Fund TNLCF',
+        code: 'CCSF',
+        urlPath: 'coronavirus-community-support-fund-tnlcf',
+    },
     'SCS3': {
         _id: 'Coronary Heart Disease/Stroke/Cancer',
         code: 'SCS3',
