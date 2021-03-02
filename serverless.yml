@@ -21,6 +21,7 @@ package:
     - scripts/**
     - test/**
     - data/**
+    - node_modules/**
 
 plugins:
   - serverless-offline
