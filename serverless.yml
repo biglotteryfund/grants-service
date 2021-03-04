@@ -20,6 +20,7 @@ package:
     - .git/**
     - scripts/**
     - test/**
+  excludeDevDependencies: true
 
 plugins:
   - serverless-offline
