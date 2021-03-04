@@ -328,12 +328,12 @@ module.exports = {
     'CVN1': {
         _id: 'Coronavirus Community Support Fund TNLCF National',
         code: 'CVN1',
-        urlPath: 'coronavirus-community-support-fund-national',
+        urlPath: 'covid-19-funding-over-10k-for-partnerships',
     },
     'CVS1': {
         _id: 'Coronavirus Community Support Fund TNLCF Standard',
         code: 'CVS1',
-        urlPath: 'coronavirus-community-support-fund-standard',
+        urlPath: 'covid-19-funding-over-10k',
     },
     'SCS3': {
         _id: 'Coronary Heart Disease/Stroke/Cancer',
