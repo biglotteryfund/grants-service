@@ -57,7 +57,7 @@
     "event-stream": "4.0.1",
     "jest": "26.2.2",
     "jest-environment-node": "26.3.0",
-    "mongodb-memory-server": "6.7.5",
+    "mongodb-memory-server": "7.3.2",
     "nodemon": "2.0.4",
     "prettier": "2.0.5",
     "serverless": "1.73.1",
