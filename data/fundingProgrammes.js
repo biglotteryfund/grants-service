@@ -1247,4 +1247,34 @@ module.exports = {
         code: 'CAF1',
         urlPath: 'climate-action-fund',
     },
+    "CSI1": {
+        _id: "National Lottery COVID-19 Fund - Up to £10000",
+        code: "CSI1",
+        urlPath: "national-lottery-covid-19-fund-over-10-000"
+    },
+    "HEH1": {
+        _id: "Helping End Homelessness",
+        code: "HEH1",
+        urlPath: "helping-end-homelessness"
+    },
+    "GGI1": {
+        _id: "Growing Great Ideas",
+        code: "GGI1",
+        urlPath: "growing-great-ideas"
+    },
+    "SGI1": {
+        _id: "Supporting Great Ideas",
+        code: "SGI1",
+        urlPath: "supporting-great-ideas"
+    },
+    "RUR2": {
+        _id: "Rural Wales",
+        code: "RUR2",
+        urlPath: "rural-programme"
+    },
+    "LEL2": {
+        _id: "Leaders with Lived Experience 2020",
+        code: "LEL2",
+        urlPath: "leaders-with-lived-experience-2020"
+    }
 };
